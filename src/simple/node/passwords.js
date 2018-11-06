@@ -6,7 +6,7 @@ const save = async (account, identity, opts={}) => {
   // if this doesn't match what we have on file, throw an error
   const existingKeys = await load(account)
   if (!opts.force && existingKeys && JSON.stringify(existingKeys) !== stringifiedIdentity) {
-    throw new Error(`Already have credentials for ${identity.username}, but these don't match`)
+    throw new Error(`Already have credentials for ${identity.username}, but these don't match.`)
   }
   return keytar.setPassword(SERVICE_NAME, account, stringifiedIdentity)
 }

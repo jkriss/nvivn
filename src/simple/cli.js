@@ -24,7 +24,7 @@ Usage:
   nvivn delete [options] <message-id>
   nvivn import [options] (--file <file> | --stdin | -)
   nvivn sign [options] (--stdin | - | <message>)
-  nvivn login [options] [--generate] (<username> | --keypath <keypath>)
+  nvivn login [--force] [--generate] <username>
   nvivn verify (--stdin | - | <message>)
   nvivn logout <username>
   nvivn peers
@@ -35,7 +35,6 @@ Options:
   -f <format>, --format <format>             Format of message [default: json].
   -t <type>, --type <type>                   Type of post [default: message].
   --hub <hub>     Communicate with a remote hub.
-  --force         Ignore warnings.
   -h --help       Show this screen.
   --version       Show version.
 
@@ -81,8 +80,8 @@ const run = async (opts) => {
   }
   // TODO require opts.fileStore and opts.keyStore
   const cmd = commands[opts.command]
-  if (!cmd) throw new Error(`Command "${opts.command}" is not yet implemented`)
-  cmd(opts)
+  if (!cmd) throw new Error(`Command "${opts.command}" is not yet implemented.`)
+  return cmd(opts)
 }
 
 module.exports = {
