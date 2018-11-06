@@ -4,47 +4,22 @@ const hashing = require('../hashing')
 const multibase = require('multibase')
 const { sign } = require('../simple/signing')
 const stringify = require('json-stable-stringify')
+const parseMessage = require('../simple/parse-message')
+const signMessage = require('../simple/sign-message')
+const formatMessage = require('../simple/format-message')
 
 const constructPost = (message, opts={}) => {
-  let m = {}
-  if (opts.format === 'json') {
-    let body
-    try {
-      const inputMessage = JSON.parse(message)
-      // TODO trim any other fields?
-      if (inputMessage.body) m = inputMessage
-      else m.body = inputMessage
-    } catch (err) {
-      m.body = message
-    }
-  } else {
-    throw new Error(`Unknown format ${opts.format}`)
-  }
+  const m = parseMessage(message, opts)
 
-  if (!m.type) {
-    m.type = opts.type
-  }
 
-  // add metadata
-  m.meta = {
-    t: Date.now()
-  }
+  if (!m.meta) m.meta = {}
+  m.meta.t = Date.now()
 
   if (opts.identity) {
     // TODO should this be a full public key?
     m.from = opts.identity.id
 
-    const secretKeyBuffer = multibase.decode(opts.identity.secretKey)
-    const signature = sign(m, secretKeyBuffer)
-
-    if (!m.meta.signed) {
-      m.meta.signed = []
-      m.meta.signed.push({
-        publicKey: opts.identity.publicKey,
-        signature
-      })
-      debug("signature:", signature)
-    }
+    signMessage(m, opts)
 
     if (!m.meta.route) m.meta.route = []
     m.meta.route.push({
@@ -59,14 +34,6 @@ const constructPost = (message, opts={}) => {
   m.meta.hash = hashing.hashEnc(hashData)
 
   return m
-}
-
-const formatMessage = (message, format) => {
-  if (format === 'json') {
-    return JSON.stringify(message)
-  } else {
-    throw new Error(`Unknown format ${format}`)
-  }
 }
 
 const post = (opts) => {

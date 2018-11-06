@@ -7,12 +7,14 @@ const post = require('../commands/post')
 const login = require('../commands/login')
 const logout = require('../commands/logout')
 const verify = require('../commands/verify')
+const sign = require('../commands/sign')
 
 const commands = {
   post,
   login,
   logout,
-  verify
+  verify,
+  sign
 }
 
 const doc = `
