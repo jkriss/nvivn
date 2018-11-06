@@ -11,6 +11,7 @@ const constructPost = (message, opts={}) => {
     let body
     try {
       const inputMessage = JSON.parse(message)
+      // TODO trim any other fields?
       if (inputMessage.body) m = inputMessage
       else m.body = inputMessage
     } catch (err) {

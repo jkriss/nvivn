@@ -8,6 +8,13 @@ const login = require('../commands/login')
 const logout = require('../commands/logout')
 const verify = require('../commands/verify')
 
+const commands = {
+  post,
+  login,
+  logout,
+  verify
+}
+
 const doc = `
 nvivn
 
@@ -16,17 +23,17 @@ Usage:
   nvivn list [options] [<filter>...]
   nvivn delete [options] <message-id>
   nvivn import [options] (--file <file> | --stdin | -)
-  nvivn sign --username <username> (--stdin | - | <message>)
+  nvivn sign [options] (--stdin | - | <message>)
   nvivn login [options] [--generate] (<username> | --keypath <keypath>)
   nvivn verify (--stdin | - | <message>)
   nvivn logout <username>
   nvivn peers
 
 Options:
+  -u <username>, --username <username>       Username.
   -s <signature, --signature <signature>     Signature for post or action.
   -f <format>, --format <format>             Format of message [default: json].
-  --user <username>                          Username
-  --type <type>                              Type of post [default: message].
+  -t <type>, --type <type>                   Type of post [default: message].
   --hub <hub>     Communicate with a remote hub.
   --force         Ignore warnings.
   -h --help       Show this screen.
@@ -47,7 +54,7 @@ const toOpts = args => {
   if (args['-'] || args.stdin) {
     // TODO skip this if we're in a browser?
     opts.inputStream = process.stdin
-  } else if (opts.message) {
+  } else if (opts.message || opts.sign) {
     opts.inputStream = new Readable()
     opts.inputStream.push(opts.message)
     opts.inputStream.push(null)
@@ -65,28 +72,17 @@ const parse = docOpts => {
 const run = async (opts) => {
   debug("running command", opts.command)
 
-  if (opts.user && opts.keyStore) {
-    opts.identity = await opts.keyStore.load(opts.user)
+  if (opts.username && opts.keyStore) {
+    opts.identity = await opts.keyStore.load(opts.username)
     debug("identity:", opts.identity)
     if (!opts.identity) {
-      throw new Error(`No indentity found for ${opts.user}, please log in.`)
+      throw new Error(`No indentity found for ${opts.username}, please log in.`)
     }
   }
   // TODO require opts.fileStore and opts.keyStore
-  if (opts.command === 'post') {
-    // TODO create a read stream from input or file or whatever
-    post(opts)
-  } else if (opts.command === 'login') {
-    const keys = await login(opts)
-    // console.log(keys)
-    if (opts.keyStore) {
-      await opts.keyStore.save(keys.username, keys, opts)
-    }
-  } else if (opts.command === 'logout') {
-    logout(opts)
-  } else if (opts.command === 'verify') {
-    const results = await verify(opts)
-  }
+  const cmd = commands[opts.command]
+  if (!cmd) throw new Error(`Command "${opts.command}" is not yet implemented`)
+  cmd(opts)
 }
 
 module.exports = {

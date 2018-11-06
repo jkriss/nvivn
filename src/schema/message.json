@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://nvivn.io/message.schema.json",
+  "title": "Message",
+  "description": "A message in an nvivn feed",
+  "type": "object",
+  "properties": {
+    "body": {
+      "description": "The message body",
+      "type": ["string", "object"]
+    },
+    "type": {
+      "description": "The type of the message",
+      "type": "string",
+      "default": "message"
+    },
+    "from": {
+      "description": "Sender of the message",
+      "type": "string"
+    },
+    "meta": {
+      "description": "Metadata about the message",
+      "properties": {
+        "t": {
+          "$ref": "common.schema.json#/definitions/t"
+        },
+        "hash": {
+          "description": "Hash to uniquely identify the message (shouldn't include any of the meta fields)",
+          "type": "string"
+        },
+        "route": {
+          "description": "The routing history of this message",
+          "type": "array",
+          "items": { "$ref": "#/definitions/routeEntry" }
+        },
+        "signed": {
+          "description": "Signatures for this message",
+          "type": "array",
+          "items": { "$ref": "#/definitions/signatureEntry" }
+        }
+      },
+      "required": ["t"]
+    }
+  },
+  "required": ["body", "type"],
+  "definitions": {
+    "routeEntry": {
+      "type": "object",
+      "properties": {
+        "publicKey": {
+          "$ref": "common.schema.json#/definitions/publicKey"
+        },
+        "t": {
+          "$ref": "common.schema.json#/definitions/t"
+        }
+      },
+      "required": ["publicKey", "t"]
+    },
+    "signatureEntry": {
+      "type": "object",
+      "properties": {
+        "publicKey": {
+          "$ref": "common.schema.json#/definitions/publicKey"
+        },
+        "signature": {
+          "description": "Signature, in multibase format (https://github.com/multiformats/multibase)",
+          "type": "string"
+        }
+      },
+      "required": ["publicKey", "signature"]
+    }
+  }
+}

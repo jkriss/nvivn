@@ -18,11 +18,16 @@ const login = async opts => {
     publicKey: multibase.encode('base58flickr', keyPair.publicKey).toString()
   }
   const id = proquint.encode(keyPair.publicKey.slice(0,ID_LENGTH*2))
-  return {
+  const identity = {
     id,
     username: opts.username,
     ...keys
   }
+  if (opts.keyStore) {
+    await opts.keyStore.save(identity.username, identity, opts)
+  }
+  return identity
+
 }
 
 module.exports = login
