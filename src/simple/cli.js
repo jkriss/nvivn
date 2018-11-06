@@ -5,6 +5,7 @@ const { docopt } = require('docopt')
 
 const post = require('../commands/post')
 const login = require('../commands/login')
+const logout = require('../commands/logout')
 const verify = require('../commands/verify')
 
 const doc = `
@@ -18,7 +19,7 @@ Usage:
   nvivn sign (--stdin | - | <message>)
   nvivn login [options] [--generate] (<username> | --keypath <keypath>)
   nvivn verify (--stdin | - | <message>)
-  nvivn logout
+  nvivn logout <username>
   nvivn peers
 
 Options:
@@ -67,6 +68,9 @@ const run = async (opts) => {
   if (opts.user && opts.keyStore) {
     opts.identity = await opts.keyStore.load(opts.user)
     debug("identity:", opts.identity)
+    if (!opts.identity) {
+      throw new Error(`No indentity found for ${opts.user}, please log in.`)
+    }
   }
   // TODO require opts.fileStore and opts.keyStore
   if (opts.command === 'post') {
@@ -78,6 +82,8 @@ const run = async (opts) => {
     if (opts.keyStore) {
       await opts.keyStore.save(keys.username, keys, opts)
     }
+  } else if (opts.command === 'logout') {
+    logout(opts)
   } else if (opts.command === 'verify') {
     const results = await verify(opts)
   }

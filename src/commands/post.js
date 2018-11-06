@@ -55,7 +55,8 @@ const constructPost = (message, opts={}) => {
   }
 
   // const hashData = [message, meta.route[0].id, m.meta.t]
-  const hashData = [message, m.meta.t+"", m.from]
+  const hashData = [message, m.meta.t+""]
+  if (m.from) hashData.push(m.from)
   m.meta.hash = hashing.hashEnc(hashData)
 
   return m

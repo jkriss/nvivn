@@ -2,6 +2,7 @@ const BLAKE2s = require('blake2s-js')
 const scrypt = require('scrypt-async')
 const sodium = require('sodium-universal')
 const zxcvbn = require('zxcvbn')
+const signatures = require('sodium-signatures')
 
 function getScryptKey(key, salt, callback) {
   const opts = {
@@ -15,16 +16,11 @@ function getScryptKey(key, salt, callback) {
 }
 
 function getKeyPair(key, salt, callback) {
-  const keyHash = new BLAKE2s(sodium.crypto_scalarmult_SCALARBYTES)
+  const keyHash = new BLAKE2s(sodium.crypto_sign_SEEDBYTES)
   keyHash.update(Buffer.from(key))
 
   getScryptKey(keyHash.digest(), Buffer.from(salt),
-      secretKeyArray => {
-        const secretKey = Buffer.from(secretKeyArray.buffer)
-        const publicKey = Buffer.allocUnsafe(sodium.crypto_scalarmult_BYTES)
-        sodium.crypto_scalarmult_base(publicKey, secretKey)
-        callback({ publicKey, secretKey })
-      })
+      seed => callback(signatures.keyPair(seed)))
 }
 
 function generateId(username, passphrase) {

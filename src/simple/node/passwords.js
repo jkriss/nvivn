@@ -16,7 +16,12 @@ const load = async account => {
   return JSON.parse(stringifiedIdentity)
 }
 
+const del = account => {
+  return keytar.deletePassword(SERVICE_NAME, account)
+}
+
 module.exports = {
   save,
-  load
+  load,
+  del
 }
