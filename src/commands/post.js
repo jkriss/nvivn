@@ -11,13 +11,10 @@ const formatMessage = require('../simple/format-message')
 const constructPost = (message, opts={}) => {
   const m = parseMessage(message, opts)
 
-
   if (!m.meta) m.meta = {}
   m.meta.t = Date.now()
 
   if (opts.identity) {
-    // TODO should this be a full public key?
-    m.from = opts.identity.id
 
     signMessage(m, opts)
 
