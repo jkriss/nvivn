@@ -7,24 +7,22 @@ const stringify = require('json-stable-stringify')
 
 const constructPost = (message, opts={}) => {
   let m = {}
-  let messageString
   if (opts.format === 'json') {
     let body
     try {
       const inputMessage = JSON.parse(message)
       if (inputMessage.body) m = inputMessage
       else m.body = inputMessage
-
-      messageString = stringify(inputMessage)
     } catch (err) {
       m.body = message
-      messageString = message
     }
   } else {
     throw new Error(`Unknown format ${opts.format}`)
   }
 
-  if (!m.type) m.type = opts.type
+  if (!m.type) {
+    m.type = opts.type
+  }
 
   // add metadata
   m.meta = {
@@ -32,11 +30,11 @@ const constructPost = (message, opts={}) => {
   }
 
   if (opts.identity) {
-    const secretKeyBuffer = multibase.decode(opts.identity.secretKey)
-    const signature = sign(messageString, secretKeyBuffer)
-
     // TODO should this be a full public key?
     m.from = opts.identity.id
+
+    const secretKeyBuffer = multibase.decode(opts.identity.secretKey)
+    const signature = sign(m, secretKeyBuffer)
 
     if (!m.meta.signed) {
       m.meta.signed = []

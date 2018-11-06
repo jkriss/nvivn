@@ -16,7 +16,7 @@ Usage:
   nvivn list [options] [<filter>...]
   nvivn delete [options] <message-id>
   nvivn import [options] (--file <file> | --stdin | -)
-  nvivn sign (--stdin | - | <message>)
+  nvivn sign --username <username> (--stdin | - | <message>)
   nvivn login [options] [--generate] (<username> | --keypath <keypath>)
   nvivn verify (--stdin | - | <message>)
   nvivn logout <username>

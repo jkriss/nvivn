@@ -3,16 +3,20 @@ const signatures = require('sodium-signatures')
 const multibase = require('multibase')
 const stringify = require('json-stable-stringify')
 
-const sign = (messageString, secretKeyBuffer) => {
-  if (typeof messageString !== 'string') throw new Error(`Must pass a string to sign, got ${typeof messageString}`)
-  debug("signing message body:", messageString, typeof messageString)
-  const signature = signatures.sign(Buffer.from(messageString), secretKeyBuffer)
+const signedContent = message => {
+  const messageClone = Object.assign({}, message)
+  delete messageClone.meta
+  return stringify(messageClone)
+}
+
+const sign = (message, secretKeyBuffer) => {
+  const signature = signatures.sign(Buffer.from(signedContent(message)), secretKeyBuffer)
   return multibase.encode('base58flickr', signature).toString()
 }
 
 const verify = message => {
   if (!(message.meta && message.meta.signed)) return [false]
-  const messageString = typeof message.body === 'string' ? message.body : stringify(message.body)
+  const messageString = signedContent(message)
   debug("checking message body:", messageString, typeof messageString)
   const bodyBuffer = Buffer.from(messageString)
   const results = []
