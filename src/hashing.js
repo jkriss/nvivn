@@ -1,3 +1,4 @@
+const crypto = require('crypto')
 const multihash = require('multihashes')
 const multibase = require('multibase')
 
@@ -5,11 +6,13 @@ const strToBuffer = (data) => {
   return typeof data === 'string' ? Buffer.from(data) : data
 }
 
-const hash = function(data, alg="sha2-256") {
+const hash = function(data) {
   const inputs = Array.isArray(data) ? data : [data]
   const bufs = inputs.map(strToBuffer)
   const buf = Buffer.concat(bufs)
-  return multihash.encode(buf, alg)
+  const h = crypto.createHash('sha256')
+  h.update(buf)
+  return multihash.encode(h.digest(), "sha2-256")
 }
 
 const hashEnc = function(data, alg="sha2-256", format="base64") {

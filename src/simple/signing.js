@@ -1,22 +1,16 @@
 const debug = require('debug')('nvivn:signing')
 const signatures = require('sodium-signatures')
 const multibase = require('multibase')
-const stringify = require('json-stable-stringify')
-
-const signedContent = message => {
-  const messageClone = Object.assign({}, message)
-  delete messageClone.meta
-  return stringify(messageClone)
-}
+const normalizedNonMeta = require('./normalized-non-meta')
 
 const sign = (message, secretKeyBuffer) => {
-  const signature = signatures.sign(Buffer.from(signedContent(message)), secretKeyBuffer)
+  const signature = signatures.sign(Buffer.from(normalizedNonMeta(message)), secretKeyBuffer)
   return multibase.encode('base58flickr', signature).toString()
 }
 
 const verify = message => {
   if (!(message.meta && message.meta.signed)) return [false]
-  const messageString = signedContent(message)
+  const messageString = normalizedNonMeta(message)
   debug("checking message body:", messageString, typeof messageString)
   const bodyBuffer = Buffer.from(messageString)
   const results = []

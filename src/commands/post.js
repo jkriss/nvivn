@@ -1,18 +1,19 @@
 const debug = require('debug')('nvivn:post')
 const split2 = require('split2')
-const hashing = require('../hashing')
+const hash = require('../simple/hash')
 const multibase = require('multibase')
 const { sign } = require('../simple/signing')
-const stringify = require('json-stable-stringify')
+const stringify = require('fast-json-stable-stringify')
 const parseMessage = require('../simple/parse-message')
 const signMessage = require('../simple/sign-message')
 const formatMessage = require('../simple/format-message')
+const normalizedNonMeta = require('../simple/normalized-non-meta')
 
 const constructPost = (message, opts={}) => {
   const m = parseMessage(message, opts)
 
   if (!m.meta) m.meta = {}
-  m.meta.t = Date.now()
+  // m.meta.t = Date.now()
 
   if (opts.identity) {
 
@@ -25,10 +26,7 @@ const constructPost = (message, opts={}) => {
     })
   }
 
-  // const hashData = [message, meta.route[0].id, m.meta.t]
-  const hashData = [message, m.meta.t+""]
-  if (m.from) hashData.push(m.from)
-  m.meta.hash = hashing.hashEnc(hashData)
+  m.meta.hash = hash(m)
 
   return m
 }
