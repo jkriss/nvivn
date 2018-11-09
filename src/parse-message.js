@@ -14,10 +14,9 @@ const parseMessage = (message, opts) => {
     throw new Error(`Unknown format ${opts.format}`)
   }
 
-  // if (opts.identity) {
-  //   // TODO should this be a full public key?
-  //   m.from = opts.identity.id
-  // }
+  if (opts.identity) {
+    m.from = opts.identity.publicKey
+  }
 
   if (!m.type) {
     m.type = opts.type

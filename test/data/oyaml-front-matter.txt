@@ -1,5 +1,0 @@
----
-last-sync: some-timestamp
----
-id:1 message:hi
-id:2 message:there

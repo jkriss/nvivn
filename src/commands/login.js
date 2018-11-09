@@ -1,8 +1,8 @@
 const debug = require('debug')('nvivn:login')
-const { generateId } = require('../simple/passphrase-id')
 const multibase = require('multibase')
 const proquint = require('proquint')
 const signatures = require('sodium-signatures')
+const { generateId } = require('../passphrase-id')
 
 const ID_LENGTH = 3
 

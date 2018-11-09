@@ -1,6 +1,6 @@
 const debug = require('debug')('nvivn:verify')
 const split2 = require('split2')
-const verifySignature = require('../simple/signing').verify
+const verifySignature = require('../signing').verify
 
 const verifyPost = (line, opts) => {
   let message

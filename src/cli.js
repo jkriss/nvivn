@@ -3,11 +3,11 @@ const debug = require('debug')('nvivn:cli')
 const Readable = require('stream').Readable
 const { docopt } = require('docopt')
 
-const post = require('../commands/post')
-const login = require('../commands/login')
-const logout = require('../commands/logout')
-const verify = require('../commands/verify')
-const sign = require('../commands/sign')
+const post = require('./commands/post')
+const login = require('./commands/login')
+const logout = require('./commands/logout')
+const verify = require('./commands/verify')
+const sign = require('./commands/sign')
 
 const commands = {
   post,
