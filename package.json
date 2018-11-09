@@ -21,5 +21,15 @@
     "sodium-universal": "^2.0.0",
     "split2": "^3.0.0",
     "zxcvbn": "^4.4.2"
+  },
+  "devDependencies": {
+    "husky": "^1.1.3",
+    "prettier": "^1.15.1",
+    "pretty-quick": "^1.8.0"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
   }
 }
