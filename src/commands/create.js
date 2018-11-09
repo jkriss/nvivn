@@ -4,13 +4,11 @@ const formatMessage = require('../format-message')
 const parseMessage = require('../parse-message')
 
 const create = opts => {
-  // debug("posting", opts)
   opts.inputStream
     .pipe(split2())
     .on('data', line => {
       debug('read:', line)
       const message = parseMessage(line, opts)
-      // debug("message:", message)
       opts.outputStream.write(formatMessage(message, opts.format) + '\n')
     })
     .on('finish', () => debug('done'))
