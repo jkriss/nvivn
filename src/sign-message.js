@@ -3,6 +3,12 @@ const multibase = require('multibase')
 const { sign } = require('./signing')
 const hash = require('./hash')
 
+const without = (obj, ...fields) => {
+  const copy = Object.assign({}, obj)
+  fields.forEach(f => delete copy[f])
+  return copy
+}
+
 const signMessage = (message, opts) => {
   if (opts.identity) {
     if (!message.meta) message.meta = {}
@@ -23,12 +29,15 @@ const signMessage = (message, opts) => {
       hash: message.meta.hash,
       t,
     }
+    if (opts.type) {
+      objToSign.type = opts.type
+    }
     const signature = sign(objToSign, secretKeyBuffer)
 
     message.meta.signed.push({
       publicKey: opts.identity.publicKey,
       signature,
-      t,
+      ...without(objToSign, 'hash'),
     })
     debug('signature:', signature)
   }

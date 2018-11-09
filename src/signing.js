@@ -6,6 +6,7 @@ const hash = require('./hash')
 const { normalizedNonMeta } = require('./normalized-non-meta')
 
 const sign = (message, secretKeyBuffer) => {
+  debug('signing', normalizedNonMeta(message))
   const signature = signatures.sign(
     Buffer.from(normalizedNonMeta(message)),
     secretKeyBuffer
@@ -17,6 +18,7 @@ const normalizedSignatures = message => {
   if (!message.meta || !message.meta.signed) return []
   // recompute this to make sure the message hasn't been tampered with
   const h = hash(message)
+  debug('hash of message', message, 'is', h)
   return message.meta.signed.map(sig => {
     const sigClone = Object.assign({ hash: h }, sig)
     delete sigClone.publicKey
@@ -45,6 +47,7 @@ const verify = message => {
       signatureBuffer,
       pubKeyBuffer
     )
+    debug('valid?', verificationResult)
     results.push(verificationResult)
   }
   return results

@@ -9,6 +9,9 @@ const create = opts => {
     .on('data', line => {
       debug('read:', line)
       const message = parseMessage(line, opts)
+      if (opts.identity) {
+        message.from = opts.identity.publicKey
+      }
       opts.outputStream.write(formatMessage(message, opts.format) + '\n')
     })
     .on('finish', () => debug('done'))

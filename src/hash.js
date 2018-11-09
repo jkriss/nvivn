@@ -1,3 +1,4 @@
+const debug = require('debug')('nvivn:hash')
 const crypto = require('crypto')
 const { normalizedNonMeta } = require('./normalized-non-meta')
 

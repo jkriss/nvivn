@@ -63,7 +63,6 @@ const toOpts = args => {
     opts.inputStream.push(opts.message)
     opts.inputStream.push(null)
   }
-  debug('opts:', opts)
   return opts
 }
 
