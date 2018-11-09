@@ -23,7 +23,7 @@ const doc = `
 nvivn
 
 Usage:
-  nvivn login [--force] [--generate] <username>
+  nvivn login [--force] [--generate] [--print] <username>
   nvivn logout <username>
   nvivn create [options] (--stdin | - | <message>)
   nvivn sign [options] (--stdin | - | <message>)
@@ -74,11 +74,11 @@ const parse = docOpts => {
 const run = async opts => {
   debug('running command', opts.command)
 
-  if (opts.username && opts.keyStore) {
+  if (opts.command !== 'login' && opts.username && opts.keyStore) {
     opts.identity = await opts.keyStore.load(opts.username)
     debug('identity:', opts.identity)
     if (!opts.identity) {
-      throw new Error(`No indentity found for ${opts.username}, please log in.`)
+      throw new Error(`No identity found for ${opts.username}, please log in.`)
     }
   }
   // TODO require opts.fileStore and opts.keyStore

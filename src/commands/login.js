@@ -23,8 +23,11 @@ const login = async opts => {
     username: opts.username,
     ...keys,
   }
-  if (opts.keyStore) {
+  if (opts.keyStore && !opts.print) {
     await opts.keyStore.save(identity.username, identity, opts)
+  }
+  if (opts.print) {
+    opts.outputStream.write(JSON.stringify(identity) + '\n')
   }
   return identity
 }
