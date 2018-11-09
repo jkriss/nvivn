@@ -13,20 +13,15 @@ const constructPost = (message, opts = {}) => {
   const m = parseMessage(message, opts)
 
   if (!m.meta) m.meta = {}
-  // m.meta.t = Date.now()
 
   m.meta.hash = hash(m)
 
   if (opts.identity) {
     signMessage(m, opts)
+  }
 
-    // if (!m.meta.route) m.meta.route = []
-    // const route = {
-    //   publicKey: opts.identity.publicKey,
-    //   t: Date.now()
-    // }
-    // route.signature = signRoute(m.meta.hash, route.t, opts)
-    // m.meta.route.push(route)
+  if (opts.fileStore) {
+    opts.fileStore.write(m)
   }
 
   return m

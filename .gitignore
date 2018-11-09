@@ -2,7 +2,6 @@
 node_modules
 .hub
 .env
-data.png
 dist
 .cache
-data
+messages.txt

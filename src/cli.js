@@ -9,6 +9,7 @@ const login = require('./commands/login')
 const logout = require('./commands/logout')
 const verify = require('./commands/verify')
 const sign = require('./commands/sign')
+const list = require('./commands/list')
 
 const commands = {
   create,
@@ -17,6 +18,7 @@ const commands = {
   logout,
   verify,
   sign,
+  list,
 }
 
 const doc = `
@@ -30,7 +32,7 @@ Usage:
   nvivn post [options] (--stdin | - | <message>)
   nvivn delete [options] <message-id>
   nvivn verify (--stdin | - | <message>)
-  nvivn list [options] [<filter>...]
+  nvivn list [options] [--new] [<filter>...]
 
 Options:
   -u <username>, --username <username>       Username.
@@ -61,6 +63,7 @@ const toOpts = args => {
     opts.inputStream.push(opts.message)
     opts.inputStream.push(null)
   }
+  debug('opts:', opts)
   return opts
 }
 
