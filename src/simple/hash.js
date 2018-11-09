@@ -1,11 +1,11 @@
 const crypto = require('crypto')
-const normalizedNonMeta = require('./normalized-non-meta')
+const { normalizedNonMeta } = require('./normalized-non-meta')
 
 const hash = message => {
   const str = normalizedNonMeta(message)
   const h = crypto.createHash('sha256')
   h.update(str)
-  return h.digest('base64')
+  return h.digest('hex')
 }
 
 module.exports = hash

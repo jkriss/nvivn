@@ -1,25 +1,41 @@
 const debug = require('debug')('nvivn:signing')
 const signatures = require('sodium-signatures')
 const multibase = require('multibase')
-const normalizedNonMeta = require('./normalized-non-meta')
+const stringify = require('fast-json-stable-stringify')
+const hash = require('./hash')
+const { normalizedNonMeta } = require('./normalized-non-meta')
 
 const sign = (message, secretKeyBuffer) => {
   const signature = signatures.sign(Buffer.from(normalizedNonMeta(message)), secretKeyBuffer)
   return multibase.encode('base58flickr', signature).toString()
 }
 
+const normalizedSignatures = message => {
+  if (!message.meta || !message.meta.signed) return []
+  // recompute this to make sure the message hasn't been tampered with
+  const h = hash(message)
+  return message.meta.signed.map(sig => {
+    const sigClone = Object.assign({ hash: h }, sig)
+    delete sigClone.publicKey
+    delete sigClone.signature
+    return {
+      payload: stringify(sigClone),
+      publicKey: sig.publicKey,
+      signature: sig.signature
+    }
+  })
+}
+
 const verify = message => {
   if (!(message.meta && message.meta.signed)) return [false]
-  const messageString = normalizedNonMeta(message)
-  debug("checking message body:", messageString, typeof messageString)
-  const bodyBuffer = Buffer.from(messageString)
   const results = []
-  for (const sig of message.meta.signed) {
-    const { publicKey, signature } = sig
+  for (const { payload, signature, publicKey} of normalizedSignatures(message)) {
     debug("checking", publicKey, signature)
+    debug("payload:", payload)
     const pubKeyBuffer = multibase.decode(publicKey)
     const signatureBuffer = multibase.decode(signature)
-    const verificationResult = signatures.verify(bodyBuffer, signatureBuffer, pubKeyBuffer)
+    const payloadBuffer = Buffer.from(payload)
+    const verificationResult = signatures.verify(payloadBuffer, signatureBuffer, pubKeyBuffer)
     results.push(verificationResult)
   }
   return results

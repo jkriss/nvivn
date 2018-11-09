@@ -1,7 +1,7 @@
 const debug = require('debug')('nvivn:sign')
 const split2 = require('split2')
 const parseMessage = require('../simple/parse-message')
-const signMessage = require('../simple/sign-message')
+const { signMessage } = require('../simple/sign-message')
 const formatMessage = require('../simple/format-message')
 
 const parseAndSign = (message, opts) => {

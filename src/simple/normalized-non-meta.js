@@ -6,4 +6,6 @@ const normalizedNonMeta = message => {
   return stringify(messageClone)
 }
 
-module.exports = normalizedNonMeta
+module.exports = {
+  normalizedNonMeta
+}

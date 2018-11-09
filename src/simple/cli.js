@@ -21,10 +21,10 @@ const doc = `
 nvivn
 
 Usage:
+  nvivn create [options] (--stdin | - | <message>)
   nvivn post [options] (--stdin | - | <message>)
   nvivn list [options] [<filter>...]
   nvivn delete [options] <message-id>
-  nvivn import [options] (--file <file> | --stdin | -)
   nvivn sign [options] (--stdin | - | <message>)
   nvivn login [--force] [--generate] <username>
   nvivn verify (--stdin | - | <message>)

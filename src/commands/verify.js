@@ -9,6 +9,7 @@ const verifyPost = (line, opts) => {
   } else {
     throw new Error(`Unknown format ${opts.format}`)
   }
+  // TODO also verify routes
   return verifySignature(message)
 }
 

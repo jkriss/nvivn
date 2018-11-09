@@ -5,9 +5,9 @@ const multibase = require('multibase')
 const { sign } = require('../simple/signing')
 const stringify = require('fast-json-stable-stringify')
 const parseMessage = require('../simple/parse-message')
-const signMessage = require('../simple/sign-message')
+const { signMessage, signRoute } = require('../simple/sign-message')
 const formatMessage = require('../simple/format-message')
-const normalizedNonMeta = require('../simple/normalized-non-meta')
+const { normalizedNonMeta } = require('../simple/normalized-non-meta')
 
 const constructPost = (message, opts={}) => {
   const m = parseMessage(message, opts)
@@ -15,18 +15,21 @@ const constructPost = (message, opts={}) => {
   if (!m.meta) m.meta = {}
   // m.meta.t = Date.now()
 
+  m.meta.hash = hash(m)
+
   if (opts.identity) {
 
     signMessage(m, opts)
 
-    if (!m.meta.route) m.meta.route = []
-    m.meta.route.push({
-      publicKey: opts.identity.publicKey,
-      t: Date.now()
-    })
+    // if (!m.meta.route) m.meta.route = []
+    // const route = {
+    //   publicKey: opts.identity.publicKey,
+    //   t: Date.now()
+    // }
+    // route.signature = signRoute(m.meta.hash, route.t, opts)
+    // m.meta.route.push(route)
   }
 
-  m.meta.hash = hash(m)
 
   return m
 }
