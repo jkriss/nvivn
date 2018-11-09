@@ -11,5 +11,5 @@ const hash = message => {
 module.exports = hash
 
 if (require.main === module) {
-  console.log(hash({"body": "hi"}))
+  console.log(hash({ body: 'hi' }))
 }

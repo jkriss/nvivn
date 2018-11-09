@@ -7,9 +7,14 @@ const colors = require('colors/safe')
 
 if (require.main === module) {
   const opts = parse()
-  if (opts.command === 'login' && opts.username && !opts.passphrase && !opts.generate) {
+  if (
+    opts.command === 'login' &&
+    opts.username &&
+    !opts.passphrase &&
+    !opts.generate
+  ) {
     const passphrase = readlineSync.question('passphrase: ', {
-      hideEchoBack: true
+      hideEchoBack: true,
     })
     opts.passphrase = passphrase
   }

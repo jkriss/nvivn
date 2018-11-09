@@ -9,7 +9,9 @@ const signMessage = (message, opts) => {
     if (!message.meta.signed) {
       message.meta.signed = []
     }
-    if (message.meta.signed.find(s => s.publicKey === opts.identity.publicKey)) {
+    if (
+      message.meta.signed.find(s => s.publicKey === opts.identity.publicKey)
+    ) {
       // already signed
       return
     }
@@ -19,19 +21,19 @@ const signMessage = (message, opts) => {
 
     const objToSign = {
       hash: message.meta.hash,
-      t
+      t,
     }
     const signature = sign(objToSign, secretKeyBuffer)
 
     message.meta.signed.push({
       publicKey: opts.identity.publicKey,
       signature,
-      t
+      t,
     })
-    debug("signature:", signature)
+    debug('signature:', signature)
   }
 }
 
 module.exports = {
-  signMessage
+  signMessage,
 }

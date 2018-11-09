@@ -7,5 +7,5 @@ const normalizedNonMeta = message => {
 }
 
 module.exports = {
-  normalizedNonMeta
+  normalizedNonMeta,
 }

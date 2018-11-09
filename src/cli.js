@@ -14,7 +14,7 @@ const commands = {
   login,
   logout,
   verify,
-  sign
+  sign,
 }
 
 const doc = `
@@ -47,7 +47,7 @@ const toOpts = args => {
   const opts = {}
   for (const key of Object.keys(args)) {
     if (args[key] !== null && key.match(/^(--|<)/)) {
-      opts[key.replace(/(^(--|<))|>$/g,'')] = args[key]
+      opts[key.replace(/(^(--|<))|>$/g, '')] = args[key]
     } else if (key[0].match(/\w/) && args[key] === true) {
       opts.command = key
     }
@@ -70,12 +70,12 @@ const parse = docOpts => {
   return opts
 }
 
-const run = async (opts) => {
-  debug("running command", opts.command)
+const run = async opts => {
+  debug('running command', opts.command)
 
   if (opts.username && opts.keyStore) {
     opts.identity = await opts.keyStore.load(opts.username)
-    debug("identity:", opts.identity)
+    debug('identity:', opts.identity)
     if (!opts.identity) {
       throw new Error(`No indentity found for ${opts.username}, please log in.`)
     }
@@ -88,5 +88,5 @@ const run = async (opts) => {
 
 module.exports = {
   parse,
-  run
+  run,
 }

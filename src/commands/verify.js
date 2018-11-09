@@ -16,17 +16,18 @@ const verifyPost = (line, opts) => {
 const verify = opts => {
   return new Promise((resolve, reject) => {
     const results = []
-    opts.inputStream.pipe(split2())
+    opts.inputStream
+      .pipe(split2())
       .on('data', line => {
-        debug("read:", line)
+        debug('read:', line)
         const result = verifyPost(line, opts)
-        debug("result:", result)
+        debug('result:', result)
         const anyMatch = !!result.find(r => r)
         results.push(result)
-        if (anyMatch) opts.outputStream.write(line+'\n')
+        if (anyMatch) opts.outputStream.write(line + '\n')
       })
       .on('finish', () => {
-        debug("done")
+        debug('done')
         resolve(results)
       })
   })

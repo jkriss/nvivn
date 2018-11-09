@@ -10,7 +10,7 @@ function getScryptKey(key, salt, callback) {
     r: 8,
     interruptStep: 1000,
     dkLen: 64,
-    encoding: 'binary'
+    encoding: 'binary',
   }
   scrypt(key, salt, opts, callback)
 }
@@ -19,8 +19,9 @@ function getKeyPair(key, salt, callback) {
   const keyHash = new BLAKE2s(sodium.crypto_sign_SEEDBYTES)
   keyHash.update(Buffer.from(key))
 
-  getScryptKey(keyHash.digest(), Buffer.from(salt),
-      seed => callback(signatures.keyPair(seed)))
+  getScryptKey(keyHash.digest(), Buffer.from(salt), seed =>
+    callback(signatures.keyPair(seed))
+  )
 }
 
 function generateId(username, passphrase) {
@@ -28,8 +29,11 @@ function generateId(username, passphrase) {
   // console.log("passphrase strength:", strength.score, strength.crack_times_display, strength.feedback)
   return new Promise((resolve, reject) => {
     if (strength.score < 4) {
-      let message = [strength.feedback.warning].concat(strength.feedback.suggestions).join(' ')
-      if (message.trim() === '') message = "Add more words or characters to your passphrase"
+      let message = [strength.feedback.warning]
+        .concat(strength.feedback.suggestions)
+        .join(' ')
+      if (message.trim() === '')
+        message = 'Add more words or characters to your passphrase'
       return reject(new Error(message))
     }
     getKeyPair(passphrase, username, keyPair => {
@@ -39,5 +43,5 @@ function generateId(username, passphrase) {
 }
 
 module.exports = {
-  generateId
+  generateId,
 }

@@ -6,7 +6,10 @@ const hash = require('./hash')
 const { normalizedNonMeta } = require('./normalized-non-meta')
 
 const sign = (message, secretKeyBuffer) => {
-  const signature = signatures.sign(Buffer.from(normalizedNonMeta(message)), secretKeyBuffer)
+  const signature = signatures.sign(
+    Buffer.from(normalizedNonMeta(message)),
+    secretKeyBuffer
+  )
   return multibase.encode('base58flickr', signature).toString()
 }
 
@@ -21,7 +24,7 @@ const normalizedSignatures = message => {
     return {
       payload: stringify(sigClone),
       publicKey: sig.publicKey,
-      signature: sig.signature
+      signature: sig.signature,
     }
   })
 }
@@ -29,13 +32,19 @@ const normalizedSignatures = message => {
 const verify = message => {
   if (!(message.meta && message.meta.signed)) return [false]
   const results = []
-  for (const { payload, signature, publicKey} of normalizedSignatures(message)) {
-    debug("checking", publicKey, signature)
-    debug("payload:", payload)
+  for (const { payload, signature, publicKey } of normalizedSignatures(
+    message
+  )) {
+    debug('checking', publicKey, signature)
+    debug('payload:', payload)
     const pubKeyBuffer = multibase.decode(publicKey)
     const signatureBuffer = multibase.decode(signature)
     const payloadBuffer = Buffer.from(payload)
-    const verificationResult = signatures.verify(payloadBuffer, signatureBuffer, pubKeyBuffer)
+    const verificationResult = signatures.verify(
+      payloadBuffer,
+      signatureBuffer,
+      pubKeyBuffer
+    )
     results.push(verificationResult)
   }
   return results
@@ -43,5 +52,5 @@ const verify = message => {
 
 module.exports = {
   sign,
-  verify
+  verify,
 }

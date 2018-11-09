@@ -1,12 +1,20 @@
 const keytar = require('keytar')
 const SERVICE_NAME = 'nvivn'
 
-const save = async (account, identity, opts={}) => {
+const save = async (account, identity, opts = {}) => {
   const stringifiedIdentity = JSON.stringify(identity)
   // if this doesn't match what we have on file, throw an error
   const existingKeys = await load(account)
-  if (!opts.force && existingKeys && JSON.stringify(existingKeys) !== stringifiedIdentity) {
-    throw new Error(`Already have credentials for ${identity.username}, but these don't match.`)
+  if (
+    !opts.force &&
+    existingKeys &&
+    JSON.stringify(existingKeys) !== stringifiedIdentity
+  ) {
+    throw new Error(
+      `Already have credentials for ${
+        identity.username
+      }, but these don't match.`
+    )
   }
   return keytar.setPassword(SERVICE_NAME, account, stringifiedIdentity)
 }
@@ -23,5 +31,5 @@ const del = account => {
 module.exports = {
   save,
   load,
-  del
+  del,
 }

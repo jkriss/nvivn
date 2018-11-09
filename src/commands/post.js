@@ -9,7 +9,7 @@ const { signMessage, signRoute } = require('../sign-message')
 const formatMessage = require('../format-message')
 const { normalizedNonMeta } = require('../normalized-non-meta')
 
-const constructPost = (message, opts={}) => {
+const constructPost = (message, opts = {}) => {
   const m = parseMessage(message, opts)
 
   if (!m.meta) m.meta = {}
@@ -18,7 +18,6 @@ const constructPost = (message, opts={}) => {
   m.meta.hash = hash(m)
 
   if (opts.identity) {
-
     signMessage(m, opts)
 
     // if (!m.meta.route) m.meta.route = []
@@ -30,20 +29,20 @@ const constructPost = (message, opts={}) => {
     // m.meta.route.push(route)
   }
 
-
   return m
 }
 
-const post = (opts) => {
+const post = opts => {
   // debug("posting", opts)
-  opts.inputStream.pipe(split2())
+  opts.inputStream
+    .pipe(split2())
     .on('data', line => {
-      debug("read:", line)
+      debug('read:', line)
       const message = constructPost(line, opts)
       // debug("message:", message)
-      opts.outputStream.write(formatMessage(message, opts.format)+'\n')
+      opts.outputStream.write(formatMessage(message, opts.format) + '\n')
     })
-    .on('finish', () => debug("done"))
+    .on('finish', () => debug('done'))
 }
 
 module.exports = post
