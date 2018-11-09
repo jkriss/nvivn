@@ -3,6 +3,7 @@ const debug = require('debug')('nvivn:cli')
 const Readable = require('stream').Readable
 const { docopt } = require('docopt')
 
+const create = require('./commands/create')
 const post = require('./commands/post')
 const login = require('./commands/login')
 const logout = require('./commands/logout')
@@ -10,6 +11,7 @@ const verify = require('./commands/verify')
 const sign = require('./commands/sign')
 
 const commands = {
+  create,
   post,
   login,
   logout,
@@ -21,15 +23,14 @@ const doc = `
 nvivn
 
 Usage:
-  nvivn create [options] (--stdin | - | <message>)
-  nvivn post [options] (--stdin | - | <message>)
-  nvivn list [options] [<filter>...]
-  nvivn delete [options] <message-id>
-  nvivn sign [options] (--stdin | - | <message>)
   nvivn login [--force] [--generate] <username>
-  nvivn verify (--stdin | - | <message>)
   nvivn logout <username>
-  nvivn peers
+  nvivn create [options] (--stdin | - | <message>)
+  nvivn sign [options] (--stdin | - | <message>)
+  nvivn post [options] (--stdin | - | <message>)
+  nvivn delete [options] <message-id>
+  nvivn verify (--stdin | - | <message>)
+  nvivn list [options] [<filter>...]
 
 Options:
   -u <username>, --username <username>       Username.
