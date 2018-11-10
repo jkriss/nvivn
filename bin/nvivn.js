@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+require('dotenv').config()
 const debug = require('debug')('nvivn:cli:node')
 const readlineSync = require('readline-sync')
 const { parse, run } = require('../src/cli')

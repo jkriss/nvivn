@@ -1,13 +1,27 @@
+require('dotenv').config()
 const debug = require('debug')('nvivn:web')
-const { text } = require('micro')
+const { text, send } = require('micro')
 const url = require('url')
 const { parse, run } = require('../cli')
 const FileStore = require('../node/filestore')
 const passwordStore = require('../node/passwords')
 
 module.exports = async (req, res) => {
-  // const opts = {}
   const path = url.parse(req.url).path
+
+  if (req.method === 'GET' && path === '/') {
+    if (process.env.NVIVN_PROFILE) {
+      const profile = await passwordStore.load(process.env.NVIVN_PROFILE)
+      return send(res, 200, {
+        id: profile.id,
+        publicKey: profile.publicKey,
+      })
+    }
+  }
+
+  if (req.method === 'GET') return send(res, 404)
+
+  // const opts = {}
   debug('req.url', req.url)
   debug('path', path)
   const command = decodeURIComponent(path.slice(1))
