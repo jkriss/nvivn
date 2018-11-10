@@ -2,6 +2,15 @@ const debug = require('debug')('nvivn:create')
 const split2 = require('split2')
 const formatMessage = require('../format-message')
 const parseMessage = require('../parse-message')
+const { signMessage } = require('../sign-message')
+const endStream = require('../end-stream')
+
+const createMessage = (message, opts) => {
+  if (opts.identity) {
+    signMessage(message, opts)
+  }
+  return formatMessage(message, opts.format)
+}
 
 const create = opts => {
   opts.inputStream
@@ -12,9 +21,12 @@ const create = opts => {
       if (opts.identity) {
         message.from = opts.identity.publicKey
       }
-      opts.outputStream.write(formatMessage(message, opts.format) + '\n')
+      opts.outputStream.write(createMessage(message, opts) + '\n')
     })
-    .on('finish', () => debug('done'))
+    .on('finish', () => {
+      endStream(opts.outputStream)
+      debug('done')
+    })
 }
 
 module.exports = create

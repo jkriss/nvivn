@@ -8,6 +8,7 @@ const parseMessage = require('../parse-message')
 const { signMessage, signRoute } = require('../sign-message')
 const formatMessage = require('../format-message')
 const { normalizedNonMeta } = require('../normalized-non-meta')
+const endStream = require('../end-stream')
 
 const constructPost = (message, opts = {}) => {
   const m = parseMessage(message, opts)
@@ -35,9 +36,14 @@ const post = opts => {
       debug('read:', line)
       const message = constructPost(line, opts)
       // debug("message:", message)
-      opts.outputStream.write(formatMessage(message, opts.format) + '\n')
+      const formatted = formatMessage(message, opts.format)
+      debug('writing to output stream', formatted)
+      opts.outputStream.write(formatted + '\n')
     })
-    .on('finish', () => debug('done'))
+    .on('finish', () => {
+      endStream(opts.outputStream)
+      debug('done')
+    })
 }
 
 module.exports = post

@@ -45,7 +45,7 @@ Options:
 
 `
 
-const toOpts = args => {
+const toOpts = (args, { inputStream }) => {
   // make the arguments into a regular options object
   const opts = {}
   for (const key of Object.keys(args)) {
@@ -57,24 +57,34 @@ const toOpts = args => {
   }
   if (args['-'] || args.stdin) {
     // TODO skip this if we're in a browser?
-    opts.inputStream = process.stdin
-  } else if (opts.message || opts.sign) {
-    opts.inputStream = new Readable()
-    opts.inputStream.push(opts.message)
-    opts.inputStream.push(null)
+    opts.inputStream = inputStream || process.stdin
   }
   return opts
 }
 
-const parse = docOpts => {
+const parse = (docOpts = {}, nvivnOpts = {}) => {
+  const originalCommand = docOpts.argv || process.argv.slice(2)
   const args = docopt(doc, docOpts)
   debug(args)
-  const opts = toOpts(args)
+  const opts = toOpts(args, nvivnOpts)
+  opts.originalCommand = originalCommand
   return opts
 }
 
 const run = async opts => {
   debug('running command', opts.command)
+  if (!opts.format) opts.format = 'json'
+
+  if (opts.message || opts.sign) {
+    debug('making inputstream from message', opts.message)
+    opts.inputStream = new Readable()
+    opts.inputStream.push(
+      typeof opts.message === 'string'
+        ? opts.message
+        : JSON.stringify(opts.message)
+    )
+    opts.inputStream.push(null)
+  }
 
   if (opts.command !== 'login' && opts.username && opts.keyStore) {
     opts.identity = await opts.keyStore.load(opts.username)

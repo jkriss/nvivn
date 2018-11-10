@@ -1,12 +1,15 @@
+const debug = require('debug')('nvivn:list')
 const ndjson = require('ndjson')
 const mingo = require('mingo')
 const through2 = require('through2')
 const datemath = require('datemath-parser')
 
 const list = opts => {
+  debug('listing with opts')
   let filter
   // build a mingo filter from this
   const q = {}
+  if (!opts.filter) opts.filter = []
   opts.filter.forEach(f => {
     const [field, value] = f.split(':')
     if (field === 'since') {
@@ -30,10 +33,12 @@ const list = opts => {
 
   const filterStream = through2.obj(function(chunk, enc, callback) {
     if (!filter || filter.test(chunk)) {
+      debug('matched:', chunk)
       this.push(chunk)
     }
     callback()
   })
+  debug('file store?', !!opts.fileStore)
   if (opts.fileStore) {
     opts.fileStore
       .getReadStream()
