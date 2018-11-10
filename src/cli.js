@@ -55,6 +55,7 @@ const toOpts = (args, { inputStream }) => {
       opts.command = key
     }
   }
+  if (!opts.username) opts.username = process.env.NVIVN_PROFILE
   if (args['-'] || args.stdin) {
     // TODO skip this if we're in a browser?
     opts.inputStream = inputStream || process.stdin
