@@ -3,6 +3,7 @@ const { text } = require('micro')
 const url = require('url')
 const { parse, run } = require('../cli')
 const FileStore = require('../node/filestore')
+const passwordStore = require('../node/passwords')
 
 module.exports = async (req, res) => {
   // const opts = {}
@@ -23,5 +24,6 @@ module.exports = async (req, res) => {
   // opts.inputStream = req
   opts.outputStream = res
   opts.fileStore = new FileStore({ path: process.cwd(), exit: false })
+  opts.keyStore = passwordStore
   run(opts)
 }

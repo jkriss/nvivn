@@ -16,8 +16,8 @@ Run `nivin -h` to see all the options.
 ## Setting a profile
 
 After running `nvivn login <username>` to create a profile, you can set that
-profile via the `NVIVN_PROFILE` environment variable so you don't have to
-include it in all your commands via the `-u` or `--username` options.
+profile via the `NVIVN_PROFILE` environment variable, which will always apply,
+regardless of the `-u` or `--username` options.
 
 ## Examples
 

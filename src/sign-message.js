@@ -29,9 +29,10 @@ const signMessage = (message, opts) => {
       hash: message.meta.hash,
       t,
     }
-    if (opts.type) {
-      objToSign.type = opts.type
-    }
+    let sigType = 'route'
+    if (opts.command === 'sign' && opts.type) sigType = opts.type
+    objToSign.type = sigType
+
     const signature = sign(objToSign, secretKeyBuffer)
 
     message.meta.signed.push({
