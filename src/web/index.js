@@ -16,6 +16,8 @@ module.exports = async (req, res) => {
         id: profile.id,
         publicKey: profile.publicKey,
       })
+    } else {
+      return send(res, 404)
     }
   }
 
