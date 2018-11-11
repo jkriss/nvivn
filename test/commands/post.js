@@ -1,9 +1,8 @@
 const tap = require('tap')
 const signatures = require('sodium-signatures')
 const multibase = require('multibase')
-const create = require('../../src/simpler/commands/create')
-const post = require('../../src/simpler/commands/post')
-const MemoryStore = require('../../src/simpler/stores/memory')
+const { create, post } = require('../../src/index')
+const MemoryStore = require('../../src/stores/memory')
 
 tap.test('post a message', async function(t) {
   const messageStore = new MemoryStore()

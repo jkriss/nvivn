@@ -1,8 +1,6 @@
 const tap = require('tap')
 const signatures = require('sodium-signatures')
-const create = require('../../src/simpler/commands/create')
-const sign = require('../../src/simpler/commands/sign')
-const verify = require('../../src/simpler/commands/verify')
+const { create, sign, verify } = require('../../src/index')
 
 tap.test('sign a message and verify', async function(t) {
   const m = create('hi')

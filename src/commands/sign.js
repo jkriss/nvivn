@@ -1,25 +1,16 @@
-const debug = require('debug')('nvivn:sign')
-const split2 = require('split2')
-const parseMessage = require('../parse-message')
-const { signMessage } = require('../sign-message')
-const formatMessage = require('../format-message')
+const createSignature = require('../util/sign')
 
-const parseAndSign = (message, opts) => {
-  const m = parseMessage(message, opts)
-  signMessage(m, opts)
-  return m
-}
-
-const sign = opts => {
-  // debug("posting", opts)
-  opts.inputStream
-    .pipe(split2())
-    .on('data', line => {
-      debug('read:', line)
-      const message = parseAndSign(line, opts)
-      opts.outputStream.write(formatMessage(message, opts.format) + '\n')
+const sign = (message, opts) => {
+  const m = Object.assign({}, message)
+  if (opts.keys) {
+    const signatureObj = createSignature(m, {
+      keys: opts.keys,
+      signProps: opts.signProps,
     })
-    .on('finish', () => debug('done'))
+    if (!m.meta.signed) m.meta.signed = []
+    m.meta.signed.push(signatureObj)
+  }
+  return m
 }
 
 module.exports = sign

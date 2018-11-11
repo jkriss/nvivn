@@ -1,5 +1,5 @@
 const tap = require('tap')
-const create = require('../../src/simpler/commands/create')
+const create = require('../../src/commands/create')
 
 module.exports = (StoreClass, opts) => {
   tap.test('add a message', async function(t) {

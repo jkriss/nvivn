@@ -1,5 +1,5 @@
 const tap = require('tap')
-const create = require('../../src/simpler/commands/create')
+const { create } = require('../../src/index')
 
 tap.test('create a message from a string', async function(t) {
   const m = create('hi')
