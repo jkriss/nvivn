@@ -4,12 +4,17 @@
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
   "main": "src/index.js",
+  "bin": {
+    "nvivn": "bin/nvivn.js"
+  },
   "scripts": {
-    "test": "faucet test/**/*.js"
+    "test": "faucet test/**/*.js test/*.js"
   },
   "dependencies": {
     "debug": "^4.1.0",
+    "docopt": "^0.6.2",
     "fs-extra": "^7.0.1",
+    "get-stdin": "^6.0.0",
     "lockfile": "^1.0.4",
     "multibase": "^0.5.0",
     "ndjson": "^1.5.0",
