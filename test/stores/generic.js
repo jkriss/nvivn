@@ -86,7 +86,7 @@ module.exports = (StoreClass, opts = {}) => {
       const m = create({ body: 'hi', expr: 0 })
       const store = new StoreClass(opts)
       await store.write(m)
-      if (opts.checkFrequency) await sleep(opts.checkFrequency * 2)
+      if (opts.checkFrequency) await sleep(opts.checkFrequency * 3)
       const stored = await store.get(m.meta.hash)
       t.notOk(stored, m)
     }
@@ -99,7 +99,7 @@ module.exports = (StoreClass, opts = {}) => {
       const store = new StoreClass(opts)
       await store.clear()
       await store.write(m)
-      if (opts.checkFrequency) await sleep(opts.checkFrequency * 2)
+      if (opts.checkFrequency) await sleep(opts.checkFrequency * 3)
       let items = 0
       const hashes = []
       for await (const m of store) {
