@@ -7,7 +7,7 @@ module.exports = (StoreClass, opts) => {
     const store = new StoreClass(opts)
     await store.write(m)
     const stored = await store.get(m.meta.hash)
-    t.same(m, stored)
+    t.same(stored, m)
   })
 
   tap.test('delete a message', async function(t) {
@@ -73,6 +73,6 @@ module.exports = (StoreClass, opts) => {
       hashes.push(m.meta.hash)
     }
     t.equal(items, 2)
-    t.same(hashes, [m1.meta.hash, m2.meta.hash])
+    t.same(hashes.sort(), [m1.meta.hash, m2.meta.hash].sort())
   })
 }
