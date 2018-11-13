@@ -1,4 +1,4 @@
-const debug = require('debug')('nvivn:filestore')
+const debug = require('debug')('nvivn:store:file')
 const path = require('path')
 const fs = require('fs-extra')
 const ndjson = require('ndjson')
@@ -27,7 +27,14 @@ class FileStore {
   }
   async get(hash) {
     for await (const m of this) {
-      if (m.meta.hash === hash) return m
+      if (m.meta.hash === hash) {
+        if (m.expr !== undefined && m.expr <= Date.now()) {
+          this.del(m.meta.hash)
+          return null
+        } else {
+          return m
+        }
+      }
     }
   }
   async del(hash) {
@@ -64,7 +71,12 @@ class FileStore {
     let obj = readStream.read()
     debug('read object:', obj)
     while (obj) {
-      yield await obj
+      debug('passes filter?', obj.expr === undefined || obj.expr > Date.now())
+      if (obj.expr === undefined || obj.expr > Date.now()) {
+        yield await obj
+      } else {
+        this.del(obj)
+      }
       obj = readStream.read()
       debug('read object:', obj)
     }

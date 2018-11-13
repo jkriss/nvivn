@@ -1,4 +1,5 @@
 const debug = require('debug')('nvivn:store:level')
+const ttl = require('level-ttl')
 
 const awaitNext = iterator => {
   return new Promise((resolve, reject) => {
@@ -15,10 +16,18 @@ class LevelStore {
     if (!opts.db)
       throw new Error('Must supply a db argument with a level instance')
     this.db = opts.db
+    const checkFrequency = opts.checkFrequency || 10000
+    debug('setting ttl check to', checkFrequency)
+    ttl(this.db, { checkFrequency })
   }
   write(message) {
     // console.log("saving", message.meta.hash)
-    return this.db.put(message.meta.hash, JSON.stringify(message))
+    const ttlOpts = {}
+    if (message.expr !== undefined) {
+      ttlOpts.ttl = Math.max(1, message.expr - Date.now())
+      debug('!! set ttl to', ttlOpts.ttl)
+    }
+    return this.db.put(message.meta.hash, JSON.stringify(message), ttlOpts)
   }
   async get(hash) {
     let result

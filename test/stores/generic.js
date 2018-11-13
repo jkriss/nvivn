@@ -1,8 +1,9 @@
 const tap = require('tap')
 const create = require('../../src/commands/create')
+const sleep = require('await-sleep')
 
-module.exports = (StoreClass, opts) => {
-  tap.test('add a message', async function(t) {
+module.exports = (StoreClass, opts = {}) => {
+  tap.test(`${StoreClass.name}: add a message`, async function(t) {
     const m = create('hi')
     const store = new StoreClass(opts)
     await store.write(m)
@@ -10,7 +11,7 @@ module.exports = (StoreClass, opts) => {
     t.same(stored, m)
   })
 
-  tap.test('delete a message', async function(t) {
+  tap.test(`${StoreClass.name}: delete a message`, async function(t) {
     const m1 = create('hi')
     const m2 = create('hi again')
     const store = new StoreClass(opts)
@@ -24,20 +25,23 @@ module.exports = (StoreClass, opts) => {
     t.same(m2, stored2)
   })
 
-  tap.test('delete multiple messages simultaneously', async function(t) {
-    const m1 = create('hi')
-    const m2 = create('hi again')
-    const store = new StoreClass(opts)
-    await store.write(m1)
-    await store.write(m2)
-    await Promise.all([store.del(m1.meta.hash), store.del(m2.meta.hash)])
-    const stored1 = await store.get(m1.meta.hash)
-    t.notOk(stored1)
-    const stored2 = await store.get(m2.meta.hash)
-    t.notOk(stored2)
-  })
+  tap.test(
+    `${StoreClass.name}: delete multiple messages simultaneously`,
+    async function(t) {
+      const m1 = create('hi')
+      const m2 = create('hi again')
+      const store = new StoreClass(opts)
+      await store.write(m1)
+      await store.write(m2)
+      await Promise.all([store.del(m1.meta.hash), store.del(m2.meta.hash)])
+      const stored1 = await store.get(m1.meta.hash)
+      t.notOk(stored1)
+      const stored2 = await store.get(m2.meta.hash)
+      t.notOk(stored2)
+    }
+  )
 
-  tap.test('test if a message exists', async function(t) {
+  tap.test(`${StoreClass.name}: test if a message exists`, async function(t) {
     const m1 = create('hi')
     const m2 = create('hi again')
     const store = new StoreClass(opts)
@@ -48,7 +52,7 @@ module.exports = (StoreClass, opts) => {
     t.false(m2Exists)
   })
 
-  tap.test('clear the store', async function(t) {
+  tap.test(`${StoreClass.name}: clear the store`, async function(t) {
     const m1 = create('hi')
     const store = new StoreClass(opts)
     await store.write(m1)
@@ -59,7 +63,7 @@ module.exports = (StoreClass, opts) => {
     t.false(m1StillExists)
   })
 
-  tap.test('test iterator', async function(t) {
+  tap.test(`${StoreClass.name}: test iterator`, async function(t) {
     const m1 = create('hi')
     const m2 = create('hi again')
     const store = new StoreClass(opts)
@@ -75,4 +79,33 @@ module.exports = (StoreClass, opts) => {
     t.equal(items, 2)
     t.same(hashes.sort(), [m1.meta.hash, m2.meta.hash].sort())
   })
+
+  tap.test(
+    `${StoreClass.name}: return null for an expired message`,
+    async function(t) {
+      const m = create({ body: 'hi', expr: 0 })
+      const store = new StoreClass(opts)
+      await store.write(m)
+      if (opts.checkFrequency) await sleep(opts.checkFrequency * 2)
+      const stored = await store.get(m.meta.hash)
+      t.notOk(stored, m)
+    }
+  )
+
+  tap.test(
+    `${StoreClass.name}: return null for an expired message from the iterator`,
+    async function(t) {
+      const m = create({ body: 'hi', expr: 0 })
+      const store = new StoreClass(opts)
+      await store.clear()
+      await store.write(m)
+      if (opts.checkFrequency) await sleep(opts.checkFrequency * 2)
+      let items = 0
+      const hashes = []
+      for await (const m of store) {
+        items++
+      }
+      t.equal(items, 0)
+    }
+  )
 }

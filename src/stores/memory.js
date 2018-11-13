@@ -9,7 +9,12 @@ class MemoryStore {
     this.messages.push(message)
   }
   async get(hash) {
-    return this.messages.find(m => m.meta.hash === hash)
+    const m = this.messages.find(m => m.meta.hash === hash)
+    if (m && m.expr !== undefined && m.expr <= Date.now()) {
+      this.del(m.meta.hash)
+      return null
+    }
+    return m
   }
   async del(hash) {
     const idx = this.messages.findIndex(m => m.meta.hash === hash)
@@ -21,7 +26,9 @@ class MemoryStore {
     this.messages = []
   }
   [Symbol.iterator]() {
-    return this.messages[Symbol.iterator]()
+    return this.messages
+      .filter(m => m.expr === undefined || m.expr > Date.now())
+      [Symbol.iterator]()
   }
 }
 

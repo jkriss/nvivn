@@ -15,6 +15,14 @@ tap.test('create a message from an object', async function(t) {
   t.ok(m.t)
 })
 
+tap.test('create a message from an object, including expr', async function(t) {
+  const m = create({ body: 'hi', expr: 1000 })
+  t.equal(m.body, 'hi')
+  t.equal(m.expr, 1000)
+  t.ok(m.meta.hash)
+  t.ok(m.t)
+})
+
 tap.test('create a message from an object, favor existing data', async function(
   t
 ) {

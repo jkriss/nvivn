@@ -3,6 +3,7 @@ const LevelStore = require('../../src/stores/level')
 const levelup = require('levelup')
 const memdown = require('memdown')
 
-const db = levelup(memdown())
+const checkFrequency = 10
+const db = levelup(memdown({ checkFrequency }))
 
-genericStoreTester(LevelStore, { db })
+genericStoreTester(LevelStore, { db, checkFrequency })
