@@ -11,12 +11,11 @@ const importMessages = async file => {
     .createReadStream(file, 'utf8')
     .pipe(ndjson.parse())
     .on('data', async obj => {
-      // console.log("bookmark:", obj)
-      obj.tags = obj.tags.trim() === '' ? [] : obj.tags.split(/\s/)
+      console.log('tweet:', obj)
       const m = create({
-        t: new Date(obj.time).getTime(),
-        type: 'bookmark',
-        source: 'pinboard',
+        t: new Date(obj.created_at).getTime(),
+        type: 'tweet',
+        source: 'twitter',
         body: obj,
       })
       const posted = await post(m, { keys, messageStore })

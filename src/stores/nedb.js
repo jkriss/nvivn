@@ -24,6 +24,7 @@ class NedbStore {
     })
     this.db.ensureIndex({ fieldName: 'meta.hash' })
     this.db.ensureIndex({ fieldName: 't' })
+    this.db.ensureIndex({ fieldName: 'type' })
   }
   async write(message) {
     const exists = await this.exists(message)
