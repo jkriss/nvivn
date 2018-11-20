@@ -3,12 +3,13 @@ const getStdin = require('get-stdin')
 const { create, post, sign, verify } = require('./index')
 const keys = require('./util/keys')
 const loadKeys = require('./util/load-keys')
+const generateId = require('./util/passphrase-ids')
 
 const doc = `
 nvivn
 Usage:
   nvivn generate [--env]
-  nvivn login [--force] [--generate] [--print] <username>
+  nvivn login [--env] <username>
   nvivn logout <username>
   nvivn create (--stdin | - | <message>)
   nvivn sign [options] (--stdin | - | <message>)
@@ -17,7 +18,6 @@ Usage:
   nvivn verify (--stdin | - | <message>)
   nvivn list [options] [--new] [<filter>...]
 Options:
-  -u <username>, --username <username>       Username.
   --hub <hub>     Communicate with a remote hub.
   -h --help       Show this screen.
   --version       Show version.
@@ -48,12 +48,20 @@ const run = async args => {
   } else if (args.verify) {
     result = verify(args['<message>'], opts)
     if (result.find(r => r === true)) result = args['<message>']
+  } else if (args.login) {
+    result = await generateId(args['<username>'], args['--passphrase'])
+    if (args['--env']) result = keys.env(result)
   }
   return result
 }
 
-const nvivn = async command => {
+const nvivn = async (command, opts = {}) => {
   const args = await parse({ argv: command })
+
+  // get the passphrase if we need one
+  if (args['<username>']) {
+    args['--passphrase'] = await opts.getPassphrase()
+  }
   // console.error("args:", args)
   return run(args)
 }
