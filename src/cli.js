@@ -1,8 +1,8 @@
 const { docopt } = require('docopt')
 const getStdin = require('get-stdin')
-const multibase = require('multibase')
 const { create, post, sign, verify } = require('./index')
 const keys = require('./util/keys')
+const loadKeys = require('./util/load-keys')
 
 const doc = `
 nvivn
@@ -37,12 +37,7 @@ const parse = async (docOpts = {}) => {
 const run = async args => {
   let result
   const opts = {}
-  if (process.env.NVIVN_PUBLIC_KEY) {
-    opts.keys = {
-      publicKey: multibase.decode(process.env.NVIVN_PUBLIC_KEY),
-      secretKey: multibase.decode(process.env.NVIVN_SECRET_KEY),
-    }
-  }
+  opts.keys = loadKeys()
   if (args.create) {
     result = create(args['<message>'], opts)
   } else if (args.sign) {
@@ -50,6 +45,9 @@ const run = async args => {
   } else if (args.generate) {
     result = keys.generate()
     if (args['--env']) result = keys.env(result)
+  } else if (args.verify) {
+    result = verify(args['<message>'], opts)
+    if (result.find(r => r === true)) result = args['<message>']
   }
   return result
 }
