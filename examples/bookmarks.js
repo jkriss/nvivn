@@ -18,8 +18,6 @@ const importMessages = async file => {
         source: 'pinboard',
         body: obj,
       })
-      // const signed = sign(m, { keys })
-      // console.log(JSON.stringify(signed))
       const posted = await post(m, { keys, messageStore })
       console.log(JSON.stringify(posted.meta.hash))
     })

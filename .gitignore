@@ -6,4 +6,5 @@ dist
 .cache
 messages.txt
 messages.db
+messages.nedb
 test/tmp

@@ -3,6 +3,7 @@ const url = require('url')
 const FileStore = require('../stores/file')
 const MemoryStore = require('../stores/memory')
 const LevelStore = require('../../src/stores/level')
+const NedbStore = require('../../src/stores/nedb')
 const level = require('level')
 
 const getStore = connectionString => {
@@ -20,6 +21,8 @@ const getStore = connectionString => {
   } else if (type === 'leveldb') {
     const db = level(pathname)
     store = new LevelStore({ db })
+  } else if (type === 'nedb') {
+    store = new NedbStore({ filename: pathname, autoload: true })
   }
   return store
 }
