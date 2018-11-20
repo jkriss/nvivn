@@ -5,4 +5,5 @@ node_modules
 dist
 .cache
 messages.txt
+messages.db
 test/tmp

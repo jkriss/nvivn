@@ -52,6 +52,24 @@ module.exports = (StoreClass, opts = {}) => {
     t.false(m2Exists)
   })
 
+  tap.test(
+    `${StoreClass.name}: don't write the same message twice`,
+    async function(t) {
+      const m = create('hi')
+      const store = new StoreClass(opts)
+      await store.clear()
+      await store.write(m)
+      const mExists = await store.exists(m)
+      t.true(mExists)
+      await store.write(m)
+      let items = 0
+      for await (message of store) {
+        items++
+      }
+      t.equal(items, 1)
+    }
+  )
+
   tap.test(`${StoreClass.name}: clear the store`, async function(t) {
     const m1 = create('hi')
     const store = new StoreClass(opts)

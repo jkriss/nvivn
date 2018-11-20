@@ -8,7 +8,8 @@ class MemoryStore {
     return !!this.messages.find(m => m.meta.hash === message.meta.hash)
   }
   async write(message) {
-    this.messages.push(message)
+    const exists = await this.exists(message)
+    if (!exists) this.messages.push(message)
   }
   async get(hash) {
     const m = this.messages.find(m => m.meta.hash === hash)

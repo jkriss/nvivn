@@ -19,7 +19,8 @@ const waitUntilReadable = stream => {
 class FileStore {
   constructor(opts = {}) {
     const filename = opts.filename || 'messages.txt'
-    this.filepath = path.join(opts.path || process.cwd(), filename)
+    this.filepath =
+      opts.filepath || path.join(opts.path || process.cwd(), filename)
   }
   async exists(message) {
     const hash = message.meta.hash
@@ -71,7 +72,7 @@ class FileStore {
     const readStream = fs.createReadStream(this.filepath).pipe(ndjson.parse())
     await waitUntilReadable(readStream)
     let obj = readStream.read()
-    debug('read object:', obj)
+    // debug('read object:', obj)
     while (obj) {
       // debug('passes filter?', obj.expr === undefined || obj.expr > Date.now())
       if (obj.expr === undefined || obj.expr > Date.now()) {
@@ -82,7 +83,7 @@ class FileStore {
         this.del(obj)
       }
       obj = readStream.read()
-      debug('read object:', obj)
+      // debug('read object:', obj)
     }
   }
 

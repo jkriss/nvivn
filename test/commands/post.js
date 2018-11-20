@@ -7,7 +7,7 @@ const MemoryStore = require('../../src/stores/memory')
 tap.test('post a message', async function(t) {
   const messageStore = new MemoryStore()
   const m = create('hi')
-  const posted = post(m, { messageStore })
+  const posted = await post(m, { messageStore })
   t.ok(posted)
   const mExists = await messageStore.exists(m)
   t.true(mExists)

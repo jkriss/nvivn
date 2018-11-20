@@ -1,3 +1,4 @@
+const debug = require('debug')('nvivn:cli')
 const { docopt } = require('docopt')
 const getStdin = require('get-stdin')
 const { create, post, sign, verify } = require('./index')
@@ -34,9 +35,9 @@ const parse = async (docOpts = {}) => {
   return args
 }
 
-const run = async args => {
+const run = async (args, passedOpts) => {
   let result
-  const opts = {}
+  const opts = Object.assign({}, passedOpts)
   opts.keys = loadKeys()
   if (args.create) {
     result = create(args['<message>'], opts)
@@ -51,6 +52,17 @@ const run = async args => {
   } else if (args.login) {
     result = await generateId(args['<username>'], args['--passphrase'])
     if (args['--env']) result = keys.env(result)
+  } else if (args.post) {
+    result = await post(args['<message>'], opts)
+  } else if (args.list) {
+    debug('filtering with', args)
+    const q = {}
+    args['<filter>'].forEach(f => {
+      const [key, value] = f.split(':')
+      q[key] = value
+    })
+    debug('filter query now', q)
+    result = opts.messageStore ? opts.messageStore.filter(q) : null
   }
   return result
 }
@@ -63,7 +75,7 @@ const nvivn = async (command, opts = {}) => {
     args['--passphrase'] = await opts.getPassphrase()
   }
   // console.error("args:", args)
-  return run(args)
+  return run(args, opts)
 }
 
 module.exports = {
