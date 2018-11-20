@@ -7,6 +7,7 @@ const tmpFile = util.promisify(require('tmp').file)
 const lockfile = require('lockfile')
 const lock = util.promisify(lockfile.lock)
 const unlock = util.promisify(lockfile.unlock)
+const filter = require('../util/filter')
 
 const waitUntilReadable = stream => {
   return new Promise((resolve, reject) => {
@@ -64,21 +65,33 @@ class FileStore {
   async clear() {
     await fs.writeFile(this.filepath, '')
   }
-  async *messageGenerator() {
+  async *messageGenerator(q) {
+    const f = q ? filter(q) : null
     await fs.ensureFile(this.filepath)
     const readStream = fs.createReadStream(this.filepath).pipe(ndjson.parse())
     await waitUntilReadable(readStream)
     let obj = readStream.read()
     debug('read object:', obj)
     while (obj) {
-      debug('passes filter?', obj.expr === undefined || obj.expr > Date.now())
+      // debug('passes filter?', obj.expr === undefined || obj.expr > Date.now())
       if (obj.expr === undefined || obj.expr > Date.now()) {
-        yield await obj
+        if (!f || (f && f(obj))) {
+          yield await obj
+        }
       } else {
         this.del(obj)
       }
       obj = readStream.read()
       debug('read object:', obj)
+    }
+  }
+
+  filter(q) {
+    const self = this
+    return {
+      [Symbol.asyncIterator]() {
+        return self.messageGenerator(q)
+      },
     }
   }
 

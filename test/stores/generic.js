@@ -108,4 +108,17 @@ module.exports = (StoreClass, opts = {}) => {
       t.equal(items, 0)
     }
   )
+
+  tap.test(`${StoreClass.name}: filter messages`, async function(t) {
+    const m1 = create('hi')
+    const m2 = create('hi again')
+    const store = new StoreClass(opts)
+    await store.write(m1)
+    await store.write(m2)
+    let items = 0
+    for await (const m of store.filter({ body: 'hi' })) {
+      items++
+    }
+    t.equal(items, 1)
+  })
 }

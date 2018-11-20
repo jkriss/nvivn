@@ -1,3 +1,5 @@
+const filter = require('../util/filter')
+
 class MemoryStore {
   constructor() {
     this.messages = []
@@ -24,6 +26,20 @@ class MemoryStore {
   }
   async clear() {
     this.messages = []
+  }
+  *filteredGenerator(q) {
+    const f = filter(q)
+    for (const m of this) {
+      if (f(m)) yield m
+    }
+  }
+  filter(q) {
+    const self = this
+    return {
+      [Symbol.iterator]() {
+        return self.filteredGenerator(q)
+      },
+    }
   }
   [Symbol.iterator]() {
     return this.messages

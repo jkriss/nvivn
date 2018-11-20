@@ -1,5 +1,6 @@
 const debug = require('debug')('nvivn:store:level')
 const ttl = require('level-ttl')
+const filter = require('../util/filter')
 
 const awaitNext = iterator => {
   return new Promise((resolve, reject) => {
@@ -56,12 +57,24 @@ class LevelStore {
     debug('deleting', hash)
     return this.db.del(hash)
   }
-  async *messageGenerator() {
+  async *messageGenerator(q) {
+    const f = q ? filter(q) : null
     const iterator = this.db.iterator()
     let hash = await awaitNext(iterator)
     while (hash) {
-      yield await this.get(hash)
+      const m = await this.get(hash)
+      if (!f || (f && f(m))) {
+        yield m
+      }
       hash = await awaitNext(iterator)
+    }
+  }
+  filter(q) {
+    const self = this
+    return {
+      [Symbol.asyncIterator]() {
+        return self.messageGenerator(q)
+      },
     }
   }
 
