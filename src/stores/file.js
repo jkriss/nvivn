@@ -4,13 +4,11 @@ const fs = require('fs-extra')
 const ndjson = require('ndjson')
 const util = require('util')
 const tmpFile = util.promisify(require('tmp').file)
-const lockfile = require('lockfile')
-const lock = util.promisify(lockfile.lock)
-const unlock = util.promisify(lockfile.unlock)
 const filter = require('../util/filter')
 const blobStore = require('fs-blob-store')
 const promisify = require('util').promisify
 const zlib = require('zlib')
+const PQueue = require('p-queue')
 
 const waitUntilReadable = stream => {
   return new Promise((resolve, reject) => {
@@ -44,6 +42,7 @@ class FileStore {
     this.hashes = blobStore(this.hashesFilepath)
     // this.deleteHash = promisify(this.hashes.remove).bind(this.hashes)
     this.hashExists = promisify(this.hashes.exists).bind(this.hashes)
+    this.operationQueue = new PQueue({ concurrency: 1 })
   }
   async deleteHash(hashPath) {
     debug('!! deleting hash path', hashPath)
@@ -80,24 +79,20 @@ class FileStore {
     return this.hashExists(getHashPath(hash))
   }
   async del(hash) {
+    return this.operationQueue.add(async () => {
+      const result = await this._del(hash)
+      return result
+    })
+  }
+  async _del(hash) {
     debug('!!!!! deleting', hash)
     const exists = await this.exists(hash)
     // if (!exists) return
-    const lockfilePath = `${this.filepath}.lock`
-    try {
-      await lock(lockfilePath, { wait: 5000 })
-      debug('--- got lock ---')
-    } catch (err) {
-      console.error('error getting lock', err)
-      throw err
-    }
     const tmpPath = await tmpFile()
     let writeStream = ndjson.stringify()
     let out = writeStream
     if (this.gzip) {
       const gzipStream = zlib.createGzip()
-      // gzipStream.pipe(writeStream)
-      // writeStream = gzipStream
       writeStream.pipe(gzipStream)
       out = gzipStream
     }
@@ -108,14 +103,20 @@ class FileStore {
         writeStream.write(m)
       }
     }
-    writeStream.end()
+    await new Promise(resolve => {
+      writeStream.end(() => resolve())
+    })
     await fs.move(tmpPath, this.filepath, { overwrite: true })
-    await unlock(lockfilePath)
     debug('this.del deleting hash')
     await this.deleteHash(getHashPath(hash))
-    debug('-- released lock --')
   }
   async write(message) {
+    return this.operationQueue.add(async () => {
+      const result = await this._write(message)
+      return result
+    })
+  }
+  async _write(message) {
     const exists = await this.exists(message.meta.hash)
     debug(`${message.meta.hash} exists already? ${exists}`)
     if (!exists) {
@@ -128,7 +129,9 @@ class FileStore {
           gzipStream.pipe(out)
           out = gzipStream
         }
-        out.on('error', err => reject(err))
+        out.on('error', err => {
+          reject(err)
+        })
         debug('writing stringified object')
         out.end(JSON.stringify(message) + '\n', () => {
           debug('!! finished write !!')
