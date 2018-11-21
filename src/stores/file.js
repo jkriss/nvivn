@@ -27,7 +27,7 @@ const waitUntilReadable = stream => {
 }
 
 const getHashPath = hash => {
-  return path.join(hash.slice(0, 2), hash.slice(2, 4), hash)
+  return path.join(hash.slice(0, 2), hash)
 }
 
 class FileStore {
