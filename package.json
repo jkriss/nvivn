@@ -24,6 +24,7 @@
     "mingo": "^2.2.4",
     "multibase": "^0.5.0",
     "ndjson": "^1.5.0",
+    "oyaml": "^0.1.5",
     "prompt": "^1.0.0",
     "scrypt-async": "^2.0.1",
     "sodium-signatures": "^2.1.1",

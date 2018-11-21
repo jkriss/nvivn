@@ -1,4 +1,5 @@
 const hash = require('../util/hash')
+const datemath = require('datemath-parser')
 
 const create = input => {
   let message
@@ -14,6 +15,9 @@ const create = input => {
     },
     message
   )
+  if (m.expr && typeof m.expr !== 'number') {
+    m.expr = datemath.parse(m.expr)
+  }
   if (!m.meta) m.meta = {}
   if (!m.meta.hash) m.meta.hash = hash(m)
   return m

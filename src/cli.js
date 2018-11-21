@@ -5,6 +5,7 @@ const { create, post, sign, verify } = require('./index')
 const keys = require('./util/keys')
 const loadKeys = require('./util/load-keys')
 const generateId = require('./util/passphrase-ids')
+const oyaml = require('oyaml')
 
 const doc = `
 nvivn
@@ -12,7 +13,7 @@ Usage:
   nvivn generate [--env]
   nvivn login [--env] <username>
   nvivn logout <username>
-  nvivn create (--stdin | - | <message>)
+  nvivn create (--stdin | - | <message>...)
   nvivn sign [options] (--stdin | - | <message>)
   nvivn post [options] (--stdin | - | <message>)
   nvivn delete [options] <message-id>
@@ -39,8 +40,20 @@ const run = async (args, passedOpts) => {
   let result
   const opts = Object.assign({}, passedOpts)
   opts.keys = loadKeys()
+  debug('args:', args)
   if (args.create) {
-    result = create(args['<message>'], opts)
+    let message = Array.isArray(args['<message>'])
+      ? args['<message>'][0]
+      : args['<message>']
+    try {
+      message = oyaml.parse(args['<message>'].join(' '))
+    } catch (err) {
+      debug('tried to parse', message)
+      try {
+        message = JSON.parse(message)
+      } catch (err2) {}
+    }
+    result = create(message, opts)
   } else if (args.sign) {
     result = sign(args['<message>'], opts)
   } else if (args.generate) {
