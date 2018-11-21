@@ -1,7 +1,7 @@
 const debug = require('debug')('nvivn:cli')
 const { docopt } = require('docopt')
 const getStdin = require('get-stdin')
-const { create, post, sign, verify } = require('./index')
+const { create, post, sign, verify, del } = require('./index')
 const keys = require('./util/keys')
 const loadKeys = require('./util/load-keys')
 const generateId = require('./util/passphrase-ids')
@@ -16,7 +16,7 @@ Usage:
   nvivn create (--stdin | - | <message>...)
   nvivn sign [options] (--stdin | - | <message>)
   nvivn post [options] (--stdin | - | <message>)
-  nvivn delete [options] <message-id>
+  nvivn delete [options] <hash>
   nvivn verify (--stdin | - | <message>)
   nvivn list [options] [--new] [<filter>...]
 Options:
@@ -73,6 +73,9 @@ const run = async (args, passedOpts) => {
     const q = oyaml.parse(args['<filter>'].join(' '), { unflatten: false })
     debug('filter query now', q)
     result = opts.messageStore ? opts.messageStore.filter(q) : null
+  } else if (args.delete) {
+    debug('deleting', args['<hash>'])
+    result = await del(args['<hash>'], opts)
   }
   return result
 }

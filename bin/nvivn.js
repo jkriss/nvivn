@@ -33,6 +33,7 @@ const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
 
 nvivn(undefined, { getPassphrase, messageStore }).then(async result => {
   debug('result:', result)
+  if (typeof result === 'undefined') return
   const iterableResult =
     result[Symbol.asyncIterator] || result[Symbol.iterator] ? result : [result]
   for await (const r of iterableResult) {

@@ -64,7 +64,7 @@ class FileStore {
   async get(hash) {
     debug('getting', hash)
     for await (const m of this) {
-      debug('checking', m)
+      // debug('checking', m)
       if (m.meta.hash === hash) {
         if (m.expr !== undefined && m.expr <= Date.now()) {
           this.del(m.meta.hash)
