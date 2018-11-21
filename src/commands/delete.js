@@ -8,17 +8,21 @@ const del = async (hash, opts = {}) => {
     const m = await opts.messageStore.get(hash)
     debug('deleting message', m)
     if (m) {
-      let deletedMessage = Object.assign({}, m)
-      deletedMessage.body = null
       // delete the old thing
       await opts.messageStore.del(hash)
-      deletedMessage = sign(deletedMessage, {
-        keys: opts.keys,
-        signProps: { type: 'deletion' },
-      })
-      // write this new deletion record
-      await opts.messageStore.write(deletedMessage)
-      return deletedMessage
+      if (!opts.hard) {
+        let deletedMessage = Object.assign({}, m)
+        deletedMessage.body = null
+        deletedMessage = sign(deletedMessage, {
+          keys: opts.keys,
+          signProps: { type: 'deletion' },
+        })
+        // write this new deletion record
+        await opts.messageStore.write(deletedMessage)
+        return deletedMessage
+      } else {
+        return m
+      }
     }
   }
 }

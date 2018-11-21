@@ -1,7 +1,7 @@
 const debug = require('debug')('nvivn:cli')
 const { docopt } = require('docopt')
 const getStdin = require('get-stdin')
-const { create, post, sign, verify, del } = require('./index')
+const { create, post, sign, verify, del, list } = require('./index')
 const keys = require('./util/keys')
 const loadKeys = require('./util/load-keys')
 const generateId = require('./util/passphrase-ids')
@@ -72,7 +72,7 @@ const run = async (args, passedOpts) => {
     debug('parsing', args['<filter>'].join(' '), 'with oyaml')
     const q = oyaml.parse(args['<filter>'].join(' '), { unflatten: false })
     debug('filter query now', q)
-    result = opts.messageStore ? opts.messageStore.filter(q) : null
+    result = await list(q, opts)
   } else if (args.delete) {
     debug('deleting', args['<hash>'])
     result = await del(args['<hash>'], opts)

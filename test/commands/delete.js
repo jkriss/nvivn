@@ -23,3 +23,18 @@ tap.test('soft delete, with a record', async function(t) {
   t.same(refetchedMessage.body, null)
   t.equal(refetchedMessage.meta.signed.length, 2)
 })
+
+tap.test('hard delete', async function(t) {
+  const keys = signatures.keyPair()
+  const messageStore = new MemoryStore()
+  const m = create('hi')
+  const posted = await post(m, { messageStore, keys })
+  t.ok(posted)
+  const mExists = await messageStore.exists(m.meta.hash)
+  t.ok(mExists)
+  await del(m.meta.hash, { messageStore, keys, hard: true })
+  const stillExists = await messageStore.exists(m.meta.hash)
+  t.notOk(stillExists)
+  const refetchedMessage = await messageStore.get(m.meta.hash)
+  t.notOk(refetchedMessage)
+})

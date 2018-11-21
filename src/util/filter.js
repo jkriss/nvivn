@@ -23,7 +23,7 @@ const filter = (query, opts = {}) => {
     q['meta.signed'] = {
       $elemMatch: {
         publicKey: opts.publicKey,
-        t: { $gt: datemath.parse(q.since) },
+        t: { $gt: datemath.parse(q.since.toString()) },
       },
     }
     delete q.since

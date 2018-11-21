@@ -3,6 +3,7 @@ const post = require('./commands/post')
 const sign = require('./commands/sign')
 const verify = require('./commands/verify')
 const del = require('./commands/delete')
+const list = require('./commands/list')
 
 module.exports = {
   create,
@@ -10,4 +11,5 @@ module.exports = {
   sign,
   verify,
   del,
+  list,
 }
