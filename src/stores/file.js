@@ -10,6 +10,7 @@ const promisify = require('util').promisify
 const PQueue = require('p-queue')
 const backwardsStream = require('fs-reverse')
 const through2 = require('through2')
+const sinceExtractor = require('../util/since')
 
 const waitUntilReadable = stream => {
   return new Promise((resolve, reject) => {
@@ -141,6 +142,10 @@ class FileStore {
     await fs.remove(this.hashesFilepath)
   }
   async *messageGenerator(q, opts = {}) {
+    let sinceCheck = () => true
+    if (q && q.since) {
+      sinceCheck = sinceExtractor({ since: q.since, publicKey: this.publicKey })
+    }
     const deleteQueue = []
     const f =
       q && Object.keys(q).length > 0
@@ -169,6 +174,12 @@ class FileStore {
         obj = readStream.read()
       }
       if (obj) {
+        const passesSince = sinceCheck(obj)
+        if (!passesSince) {
+          debug(`message is older than since query`, obj, 'returning')
+          readStream.destroy()
+          return
+        }
         const expired = obj.expr !== undefined && obj.expr <= Date.now()
         // debug("!! expired?", expired)
         if (!expired) {
