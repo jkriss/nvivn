@@ -10,6 +10,7 @@ const unlock = util.promisify(lockfile.unlock)
 const filter = require('../util/filter')
 const blobStore = require('fs-blob-store')
 const promisify = require('util').promisify
+const zlib = require('zlib')
 
 const waitUntilReadable = stream => {
   return new Promise((resolve, reject) => {
@@ -36,6 +37,8 @@ class FileStore {
     const filename = opts.filename || 'messages.txt'
     this.filepath =
       opts.filepath || path.join(opts.path || process.cwd(), filename)
+    this.gzip = path.extname(this.filepath) === '.gz'
+    debug('gzipping?', this.gzip)
     this.hashesFilepath = this.filepath + '-hashes'
     debug('storing hashes at', this.hashesFilepath)
     this.hashes = blobStore(this.hashesFilepath)
@@ -60,7 +63,9 @@ class FileStore {
     })
   }
   async get(hash) {
+    debug('getting', hash)
     for await (const m of this) {
+      debug('checking', m)
       if (m.meta.hash === hash) {
         if (m.expr !== undefined && m.expr <= Date.now()) {
           this.del(m.meta.hash)
@@ -87,8 +92,17 @@ class FileStore {
       throw err
     }
     const tmpPath = await tmpFile()
-    const writeStream = ndjson.stringify()
-    writeStream.pipe(fs.createWriteStream(tmpPath))
+    let writeStream = ndjson.stringify()
+    let out = writeStream
+    if (this.gzip) {
+      const gzipStream = zlib.createGzip()
+      // gzipStream.pipe(writeStream)
+      // writeStream = gzipStream
+      writeStream.pipe(gzipStream)
+      out = gzipStream
+    }
+
+    out.pipe(fs.createWriteStream(tmpPath))
     for await (const m of this.filter(null, { skipDeletes: true })) {
       if (m.meta.hash !== hash) {
         writeStream.write(m)
@@ -106,7 +120,21 @@ class FileStore {
     debug(`${message.meta.hash} exists already? ${exists}`)
     if (!exists) {
       await this.writeHash(message.meta.hash)
-      return fs.appendFile(this.filepath, JSON.stringify(message) + '\n')
+      // return fs.appendFile(this.filepath, JSON.stringify(message) + '\n')
+      return new Promise((resolve, reject) => {
+        let out = fs.createWriteStream(this.filepath, { flags: 'a' })
+        if (this.gzip) {
+          const gzipStream = zlib.createGzip()
+          gzipStream.pipe(out)
+          out = gzipStream
+        }
+        out.on('error', err => reject(err))
+        debug('writing stringified object')
+        out.end(JSON.stringify(message) + '\n', () => {
+          debug('!! finished write !!')
+          resolve()
+        })
+      })
     } else {
       return false
     }
@@ -122,7 +150,16 @@ class FileStore {
         ? filter(q, { publicKey: this.publicKey })
         : null
     await fs.ensureFile(this.filepath)
-    const readStream = fs.createReadStream(this.filepath).pipe(ndjson.parse())
+    let readStream
+    if (this.gzip) {
+      debug('creating gzip read stream')
+      readStream = fs
+        .createReadStream(this.filepath)
+        .pipe(zlib.createGunzip())
+        .pipe(ndjson.parse())
+    } else {
+      readStream = fs.createReadStream(this.filepath).pipe(ndjson.parse())
+    }
     await waitUntilReadable(readStream)
     let obj
     do {

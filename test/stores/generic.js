@@ -6,8 +6,11 @@ module.exports = (StoreClass, opts = {}) => {
   tap.test(`${StoreClass.name}: add a message`, async function(t) {
     const m = create('hi')
     const store = new StoreClass(opts)
+    store.clear()
     await store.write(m)
+    console.log('finished write')
     const stored = await store.get(m.meta.hash)
+    console.log('stored message:', stored)
     t.same(stored, m)
   })
 
