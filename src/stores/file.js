@@ -106,8 +106,8 @@ class FileStore {
           if (!f || (f && f(obj))) {
             yield await obj
           }
-        } else {
-          this.del(obj)
+          // } else {
+          //   this.del(obj)
         }
       }
     } while (obj)

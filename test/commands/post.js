@@ -9,7 +9,7 @@ tap.test('post a message', async function(t) {
   const m = create('hi')
   const posted = await post(m, { messageStore })
   t.ok(posted)
-  const mExists = await messageStore.exists(m)
+  const mExists = await messageStore.exists(m.meta.hash)
   t.true(mExists)
 })
 
