@@ -28,6 +28,7 @@ const waitUntilReadable = stream => {
 
 class FileStore {
   constructor(opts = {}) {
+    this.publicKey = opts.publicKey
     const filename = opts.filename || 'messages.txt'
     this.filepath =
       opts.filepath || path.join(opts.path || process.cwd(), filename)
@@ -90,7 +91,10 @@ class FileStore {
     await fs.remove(this.hashesFilepath)
   }
   async *messageGenerator(q) {
-    const f = q && Object.keys(q).length > 0 ? filter(q) : null
+    const f =
+      q && Object.keys(q).length > 0
+        ? filter(q, { publicKey: this.publicKey })
+        : null
     await fs.ensureFile(this.filepath)
     const readStream = fs.createReadStream(this.filepath).pipe(ndjson.parse())
     await waitUntilReadable(readStream)

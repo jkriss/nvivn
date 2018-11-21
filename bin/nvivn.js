@@ -3,6 +3,7 @@ require('dotenv').config()
 const debug = require('debug')('nvivn:nvivn')
 const { nvivn } = require('../src/cli')
 const getStore = require('../src/util/store-connection')
+const multibase = require('multibase')
 
 const getPassphrase = () => {
   const prompt = require('prompt')
@@ -25,7 +26,10 @@ const getPassphrase = () => {
   })
 }
 
-const messageStore = getStore()
+const publicKey = multibase
+  .encode('base58flickr', multibase.decode(process.env.NVIVN_PUBLIC_KEY))
+  .toString()
+const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
 
 nvivn(undefined, { getPassphrase, messageStore }).then(async result => {
   debug('result:', result)

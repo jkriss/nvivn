@@ -6,7 +6,8 @@ const LevelStore = require('../../src/stores/level')
 const NedbStore = require('../../src/stores/nedb')
 const level = require('level')
 
-const getStore = connectionString => {
+const getStore = (connectionString, opts = {}) => {
+  const publicKey = opts.publicKey
   if (!connectionString) connectionString = process.env.NVIVN_MESSAGE_STORE
   if (!connectionString) return null
   debug('getting store for', connectionString)
@@ -15,14 +16,14 @@ const getStore = connectionString => {
   // debug("parsed connection string", conn)
   let store
   if (type === 'file') {
-    store = new FileStore({ filepath: pathname })
+    store = new FileStore({ filepath: pathname, publicKey })
   } else if (type === 'memory') {
-    store = new MemoryStore()
+    store = new MemoryStore({ publicKey })
   } else if (type === 'leveldb') {
     const db = level(pathname)
-    store = new LevelStore({ db })
+    store = new LevelStore({ db, publicKey })
   } else if (type === 'nedb') {
-    store = new NedbStore({ filename: pathname, autoload: true })
+    store = new NedbStore({ filename: pathname, autoload: true, publicKey })
   }
   return store
 }
