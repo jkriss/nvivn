@@ -27,7 +27,7 @@ class NedbStore {
     this.db.ensureIndex({ fieldName: 'type' })
   }
   async write(message) {
-    const exists = await this.exists(message)
+    const exists = await this.exists(message.meta.hash)
     if (!exists) return this.insert(message)
   }
   async get(hash) {
@@ -41,8 +41,8 @@ class NedbStore {
   async del(hash) {
     return this.remove({ 'meta.hash': hash })
   }
-  async exists(message) {
-    const m = await this.findOne({ 'meta.hash': message.meta.hash })
+  async exists(hash) {
+    const m = await this.findOne({ 'meta.hash': hash })
     return !!m
   }
   async clear() {

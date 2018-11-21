@@ -1,9 +1,11 @@
+const debug = require('debug')('nvivn:filter')
 const mingo = require('mingo')
 const datemath = require('datemath-parser')
 
 const filter = query => {
   let f
   const q = Object.assign({}, query)
+  debug('q:', q)
   if (q.since) {
     q.t = { $gt: datemath.parse(q.since) }
     delete q.since
@@ -19,6 +21,7 @@ const filter = query => {
   //   }
   // }
   if (Object.keys(q).length > 0) {
+    debug('building filter for', q)
     f = new mingo.Query(q)
     f.test = f.test.bind(f)
   }

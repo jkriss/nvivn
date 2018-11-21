@@ -8,11 +8,21 @@ const lockfile = require('lockfile')
 const lock = util.promisify(lockfile.lock)
 const unlock = util.promisify(lockfile.unlock)
 const filter = require('../util/filter')
+const blobStore = require('fs-blob-store')
+const promisify = require('util').promisify
 
 const waitUntilReadable = stream => {
   return new Promise((resolve, reject) => {
-    stream.on('error', err => reject(err))
-    stream.on('readable', () => resolve())
+    const cb = () => {
+      stream.removeListener('readable', cb)
+      resolve()
+    }
+    const errCb = err => {
+      stream.removeListener('error', errCb)
+      reject(err)
+    }
+    stream.on('error', errCb)
+    stream.on('readable', cb)
   })
 }
 
@@ -21,11 +31,19 @@ class FileStore {
     const filename = opts.filename || 'messages.txt'
     this.filepath =
       opts.filepath || path.join(opts.path || process.cwd(), filename)
+    this.hashesFilepath = this.filepath + '-hashes'
+    debug('storing hashes at', this.hashesFilepath)
+    this.hashes = blobStore(this.hashesFilepath)
+    this.deleteHash = promisify(this.hashes.remove).bind(this.hashes)
+    this.exists = promisify(this.hashes.exists).bind(this.hashes)
   }
-  async exists(message) {
-    const hash = message.meta.hash
-    const m = await this.get(hash)
-    return !!m
+  async writeHash(hash) {
+    return new Promise((resolve, reject) => {
+      const ws = this.hashes.createWriteStream(hash)
+      ws.write('')
+      ws.on('error', err => reject(err))
+      ws.end(() => resolve())
+    })
   }
   async get(hash) {
     for await (const m of this) {
@@ -40,6 +58,8 @@ class FileStore {
     }
   }
   async del(hash) {
+    const exists = await this.exists(hash)
+    if (!exists) return
     const lockfilePath = `${this.filepath}.lock`
     await lock(lockfilePath, { wait: 5000 })
     const tmpPath = await tmpFile()
@@ -52,12 +72,14 @@ class FileStore {
     }
     writeStream.end()
     await fs.move(tmpPath, this.filepath, { overwrite: true })
+    await this.deleteHash(hash)
     await unlock(lockfilePath)
   }
   async write(message) {
-    const exists = await this.exists(message)
+    const exists = await this.exists(message.meta.hash)
     debug(`${message.meta.hash} exists already? ${exists}`)
     if (!exists) {
+      await this.writeHash(message.meta.hash)
       return fs.appendFile(this.filepath, JSON.stringify(message) + '\n')
     } else {
       return false
@@ -65,26 +87,30 @@ class FileStore {
   }
   async clear() {
     await fs.writeFile(this.filepath, '')
+    await fs.remove(this.hashesFilepath)
   }
   async *messageGenerator(q) {
-    const f = q ? filter(q) : null
+    const f = q && Object.keys(q).length > 0 ? filter(q) : null
     await fs.ensureFile(this.filepath)
     const readStream = fs.createReadStream(this.filepath).pipe(ndjson.parse())
     await waitUntilReadable(readStream)
-    let obj = readStream.read()
-    // debug('read object:', obj)
-    while (obj) {
-      // debug('passes filter?', obj.expr === undefined || obj.expr > Date.now())
-      if (obj.expr === undefined || obj.expr > Date.now()) {
-        if (!f || (f && f(obj))) {
-          yield await obj
-        }
-      } else {
-        this.del(obj)
-      }
+    let obj
+    do {
       obj = readStream.read()
-      // debug('read object:', obj)
-    }
+      if (!obj) {
+        await waitUntilReadable(readStream)
+        obj = readStream.read()
+      }
+      if (obj) {
+        if (obj.expr === undefined || obj.expr > Date.now()) {
+          if (!f || (f && f(obj))) {
+            yield await obj
+          }
+        } else {
+          this.del(obj)
+        }
+      }
+    } while (obj)
   }
 
   filter(q) {

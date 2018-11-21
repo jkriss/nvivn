@@ -46,9 +46,9 @@ module.exports = (StoreClass, opts = {}) => {
     const m2 = create('hi again')
     const store = new StoreClass(opts)
     await store.write(m1)
-    const m1Exists = await store.exists(m1)
+    const m1Exists = await store.exists(m1.meta.hash)
     t.true(m1Exists)
-    const m2Exists = await store.exists(m2)
+    const m2Exists = await store.exists(m2.meta.hash)
     t.false(m2Exists)
   })
 
@@ -59,7 +59,7 @@ module.exports = (StoreClass, opts = {}) => {
       const store = new StoreClass(opts)
       await store.clear()
       await store.write(m)
-      const mExists = await store.exists(m)
+      const mExists = await store.exists(m.meta.hash)
       t.true(mExists)
       await store.write(m)
       let items = 0
@@ -74,10 +74,10 @@ module.exports = (StoreClass, opts = {}) => {
     const m1 = create('hi')
     const store = new StoreClass(opts)
     await store.write(m1)
-    const m1Exists = await store.exists(m1)
+    const m1Exists = await store.exists(m1.meta.hash)
     t.true(m1Exists)
     await store.clear()
-    const m1StillExists = await store.exists(m1)
+    const m1StillExists = await store.exists(m1.meta.hash)
     t.false(m1StillExists)
   })
 

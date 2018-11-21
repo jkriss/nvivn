@@ -5,11 +5,11 @@ class MemoryStore {
     this.messages = []
     this.hashes = {}
   }
-  async exists(message) {
-    return this.hashes[message.meta.hash]
+  async exists(hash) {
+    return this.hashes[hash]
   }
   async write(message) {
-    const exists = await this.exists(message)
+    const exists = await this.exists(message.meta.hash)
     if (!exists) {
       this.messages.push(message)
       this.hashes[message.meta.hash] = true

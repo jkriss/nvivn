@@ -41,8 +41,8 @@ class LevelStore {
     }
     return result ? JSON.parse(result.toString()) : null
   }
-  async exists(message) {
-    const result = await this.get(message.meta.hash)
+  async exists(hash) {
+    const result = await this.get(hash)
     return !!result
   }
   async clear() {
