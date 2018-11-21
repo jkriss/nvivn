@@ -10,7 +10,7 @@ module.exports = (StoreClass, opts = {}) => {
     await store.write(m)
     console.log('finished write')
     const stored = await store.get(m.meta.hash)
-    console.log('stored message:', stored)
+    // console.log('stored message:', stored)
     t.same(stored, m)
   })
 
@@ -137,6 +137,7 @@ module.exports = (StoreClass, opts = {}) => {
     const m1 = create('hi')
     const m2 = create('hi again')
     const store = new StoreClass(opts)
+    await store.clear()
     await store.write(m1)
     await store.write(m2)
     let items = 0

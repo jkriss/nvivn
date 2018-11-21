@@ -7,13 +7,15 @@ const tmpFile = util.promisify(require('tmp').file)
 const filter = require('../util/filter')
 const blobStore = require('fs-blob-store')
 const promisify = require('util').promisify
-const zlib = require('zlib')
 const PQueue = require('p-queue')
+const backwardsStream = require('fs-reverse')
+const through2 = require('through2')
 
 const waitUntilReadable = stream => {
   return new Promise((resolve, reject) => {
     const cb = () => {
       stream.removeListener('readable', cb)
+      stream.removeListener('end', cb)
       resolve()
     }
     const errCb = err => {
@@ -22,6 +24,7 @@ const waitUntilReadable = stream => {
     }
     stream.on('error', errCb)
     stream.on('readable', cb)
+    stream.on('end', cb)
   })
 }
 
@@ -35,8 +38,6 @@ class FileStore {
     const filename = opts.filename || 'messages.txt'
     this.filepath =
       opts.filepath || path.join(opts.path || process.cwd(), filename)
-    this.gzip = path.extname(this.filepath) === '.gz'
-    debug('gzipping?', this.gzip)
     this.hashesFilepath = this.filepath + '-hashes'
     debug('storing hashes at', this.hashesFilepath)
     this.hashes = blobStore(this.hashesFilepath)
@@ -91,14 +92,12 @@ class FileStore {
     const tmpPath = await tmpFile()
     let writeStream = ndjson.stringify()
     let out = writeStream
-    if (this.gzip) {
-      const gzipStream = zlib.createGzip()
-      writeStream.pipe(gzipStream)
-      out = gzipStream
-    }
 
     out.pipe(fs.createWriteStream(tmpPath))
-    for await (const m of this.filter(null, { skipDeletes: true })) {
+    for await (const m of this.filter(null, {
+      skipDeletes: true,
+      backwards: false,
+    })) {
       if (m.meta.hash !== hash) {
         writeStream.write(m)
       }
@@ -124,11 +123,6 @@ class FileStore {
       // return fs.appendFile(this.filepath, JSON.stringify(message) + '\n')
       return new Promise((resolve, reject) => {
         let out = fs.createWriteStream(this.filepath, { flags: 'a' })
-        if (this.gzip) {
-          const gzipStream = zlib.createGzip()
-          gzipStream.pipe(out)
-          out = gzipStream
-        }
         out.on('error', err => {
           reject(err)
         })
@@ -154,11 +148,14 @@ class FileStore {
         : null
     await fs.ensureFile(this.filepath)
     let readStream
-    if (this.gzip) {
-      debug('creating gzip read stream')
-      readStream = fs
-        .createReadStream(this.filepath)
-        .pipe(zlib.createGunzip())
+    if (opts.backwards) {
+      const addLine = through2.obj(function(chunk, enc, callback) {
+        // console.log("!!! got chunk", chunk, JSON.stringify(chunk))
+        if (chunk.trim() !== '') this.push(chunk + '\n')
+        callback()
+      })
+      readStream = backwardsStream(this.filepath)
+        .pipe(addLine)
         .pipe(ndjson.parse())
     } else {
       readStream = fs.createReadStream(this.filepath).pipe(ndjson.parse())
@@ -197,7 +194,10 @@ class FileStore {
     const self = this
     return {
       [Symbol.asyncIterator]() {
-        return self.messageGenerator(q, opts)
+        return self.messageGenerator(
+          q,
+          Object.assign({ backwards: true }, opts)
+        )
       },
     }
   }
