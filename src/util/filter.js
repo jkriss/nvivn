@@ -1,6 +1,7 @@
 const debug = require('debug')('nvivn:filter')
 const mingo = require('mingo')
 const datemath = require('datemath-parser')
+const flatten = require('flat')
 
 const filter = (query, opts = {}) => {
   let f
@@ -24,12 +25,31 @@ const filter = (query, opts = {}) => {
     }
     delete q.since
   }
-  if (Object.keys(q).length > 0) {
-    debug('building filter for', JSON.stringify(q, null, 2))
-    f = new mingo.Query(q)
-    f.test = f.test.bind(f)
+  const textQuery = q.$text
+  if (textQuery) {
+    delete q.$text
   }
-  return f ? f.test : () => true
+  const anyQueryElements = Object.keys(q).length > 0
+  if (anyQueryElements || textQuery) {
+    let filter
+    if (anyQueryElements) {
+      debug('building filter for', JSON.stringify(q, null, 2))
+      filter = new mingo.Query(q)
+    }
+    // f.test = f.test.bind(f)
+    f = m => {
+      const filterMatch = !filter || filter.test(m)
+      let textMatch = true
+      if (filterMatch && textQuery) {
+        const str = Object.values(flatten(m)).join(' ')
+        textMatch = str.includes(textQuery)
+        if (textMatch)
+          debug('found', textQuery, 'in', str, '; result:', textMatch)
+      }
+      return filterMatch && textMatch
+    }
+  }
+  return f ? f : () => true
 }
 
 module.exports = filter

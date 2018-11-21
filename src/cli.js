@@ -69,11 +69,8 @@ const run = async (args, passedOpts) => {
     result = await post(args['<message>'], opts)
   } else if (args.list) {
     debug('filtering with', args)
-    const q = {}
-    args['<filter>'].forEach(f => {
-      const [key, value] = f.split(':')
-      q[key] = value
-    })
+    debug('parsing', args['<filter>'].join(' '), 'with oyaml')
+    const q = oyaml.parse(args['<filter>'].join(' '), { unflatten: false })
     debug('filter query now', q)
     result = opts.messageStore ? opts.messageStore.filter(q) : null
   }
