@@ -7,13 +7,16 @@ const filter = (query, opts = {}) => {
   let f
   const q = Object.assign({}, query)
   debug('q:', q)
-  // if (q.since) {
-  //   q.t = { $gt: datemath.parse(q.since) }
-  //   delete q.since
-  // }
-  if (q.created) {
-    q.t = { $gt: datemath.parse(q.created) }
-    delete q.created
+  if (q.createdAfter || q.createdBefore) {
+    q.t = {}
+    if (q.createdAfter) {
+      q.t.$gt = datemath.parse(q.createdAfter.toString())
+      delete q.createdAfter
+    }
+    if (q.createdBefore) {
+      q.t.$lt = datemath.parse(q.createdBefore.toString())
+      delete q.createdBefore
+    }
   }
   if (q.since && opts.publicKey) {
     debug(`looking for messages routed by ${opts.publicKey} since ${q.since}`)

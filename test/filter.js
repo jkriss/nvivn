@@ -9,8 +9,8 @@ tap.test('filter message objects', async function(t) {
 
 tap.test('special handling of created', async function(t) {
   const messages = [{ body: 'hi', t: 0 }, { body: 'there', t: Date.now() }]
-  const onlyRecent = filter({ created: 'now-10m' })
+  const onlyRecent = filter({ createdAfter: 'now-10m' })
   t.equal(messages.filter(onlyRecent).length, 1)
-  const onlyFuture = filter({ created: 'now+10m' })
+  const onlyFuture = filter({ createdAfter: 'now+10m' })
   t.equal(messages.filter(onlyFuture).length, 0)
 })
