@@ -39,7 +39,6 @@ class FileStore {
     this.publicKey = opts.publicKey
     this.path = opts.path || 'messages'
     this.datePattern = opts.datePattern || 'YYYY-MM'
-    // this.datePattern = opts.datePattern || 'YYYY-MM-DD-HH-mm'
     this.hashesFilepath = path.join(this.path, 'hashes')
     this.hashes = blobStore(this.hashesFilepath)
     this.hashExists = promisify(this.hashes.exists).bind(this.hashes)
@@ -68,7 +67,7 @@ class FileStore {
   }
   async getFilepathForHash(hash) {
     const meta = await this.getHash(hash)
-    return this.getFilepath(meta.seen)
+    return meta.file
   }
   async deleteHash(hashPath) {
     debug('!! deleting hash path', hashPath)
@@ -158,8 +157,8 @@ class FileStore {
         message.meta.signed &&
         message.meta.signed.find(s => s.publicKey === this.publicKey)
       const seen = (sig && sig.t) || Date.now()
-      await this.writeHash(message.meta.hash, { seen })
       const file = await this.getFilepath(seen)
+      await this.writeHash(message.meta.hash, { seen, file })
       // return fs.appendFile(this.filepath, JSON.stringify(message) + '\n')
       return new Promise(async (resolve, reject) => {
         await fs.ensureFile(file)
