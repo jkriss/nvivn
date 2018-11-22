@@ -183,7 +183,7 @@ class FileStore {
         if (!passesSince) {
           debug(`message is older than since query`, obj, 'returning')
           readStream.destroy()
-          return
+          break
         }
         const expired = obj.expr !== undefined && obj.expr <= Date.now()
         // debug("!! expired?", expired)
