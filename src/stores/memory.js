@@ -1,7 +1,8 @@
 const filter = require('../util/filter')
 
 class MemoryStore {
-  constructor() {
+  constructor(opts = {}) {
+    this.publicKey = opts.publicKey
     this.messages = []
     this.hashes = {}
   }
@@ -35,7 +36,7 @@ class MemoryStore {
     this.hashes = {}
   }
   *filteredGenerator(q) {
-    const f = filter(q)
+    const f = filter(q, { publicKey: this.publicKey })
     for (const m of this) {
       if (f(m)) yield m
     }
