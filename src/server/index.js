@@ -4,13 +4,36 @@ const { send, json } = require('micro')
 const loadKeys = require('../util/load-keys')
 const getStore = require('../util/store-connection')
 const url = require('url')
-const { post, list, del } = require('../index')
+const { post, list, del, verify } = require('../index')
 const multibase = require('multibase')
 const querystring = require('querystring')
+const NodeCache = require('node-cache')
+const promisify = require('util').promisify
 
+const MAX_SIGNATURE_AGE = 30 * 1000 // 30 seconds
 const keys = loadKeys()
 const publicKey = multibase.encode('base58flickr', keys.publicKey).toString()
 const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
+const cache = new NodeCache({
+  stdTTL: MAX_SIGNATURE_AGE / 1000,
+  checkperiod: MAX_SIGNATURE_AGE / 1000,
+})
+
+const setCache = promisify(cache.set).bind(cache)
+const getCache = promisify(cache.get).bind(cache)
+
+const isAllowed = (command, userPublicKey) => {
+  return userPublicKey === publicKey
+}
+
+const runCommand = async (command, args) => {
+  debug('running command', command, 'with arguments', args)
+  let result
+  if (command === 'list') {
+    result = await list(args, { messageStore, keys })
+  }
+  return result
+}
 
 module.exports = async (req, res) => {
   const requestUrl = url.parse(req.url)
@@ -21,16 +44,50 @@ module.exports = async (req, res) => {
   debug('querystring:', q)
   const limit = q.limit || 100
   delete q.limit
-  // const result = await nvivn(command, { messageStore })
-  // res.end(command)
   if (req.method === 'GET') {
-    result = list()
-    result = await opts.messageStore.filter(q, opts)
+    // TODO pull this once commands are implemented
+    result = await list(q, opts)
   } else if (req.method === 'POST') {
     const message = await json(req)
-    debug('posting', message)
-    // TODO validate this before writing
-    result = await post(message, opts)
+    if (message.type === 'command') {
+      debug('handling command', message.command)
+      const verificationResult = await verify(message)
+      // all signatures must pass for this to count
+      const verified =
+        message.meta.signed && !verificationResult.find(v => v === false)
+      if (!verified) return send(res, 400, { message: 'signature not valid' })
+      debug('verified command')
+      const users = message.meta.signed.map(s => s.publicKey)
+      // are the signatures recent enough?
+      const times = message.meta.signed.map(s => s.t)
+      const oldestSignatureTime = Math.min(...times)
+      if (oldestSignatureTime < Date.now() - MAX_SIGNATURE_AGE) {
+        return send(res, 401, { message: 'signature is not recent enough' })
+      }
+      // have we already processed this hash within the acceptable time frame?
+      const recentlyRun = await getCache(message.meta.hash)
+      if (recentlyRun) {
+        return send(res, 401, { message: 'command has already been run' })
+      }
+      debug('command run by', users)
+      const commandAllowed = !users
+        .map(u => isAllowed(message.command, u))
+        .find(result => result === false)
+      debug('command allowed?', commandAllowed)
+      if (!commandAllowed) {
+        return send(res, 403, {
+          message: `not allowed to run ${mesage.command}`,
+        })
+      } else {
+        setCache(message.meta.hash, true)
+        result = await runCommand(message.command, message.args)
+      }
+    } else {
+      debug('posting', message)
+      // TODO validate this before writing
+      // TODO check to see if this author is allowed to post
+      result = await post(message, opts)
+    }
   } else if (req.method === 'DELETE') {
     const hash = requestUrl.pathname.slice(1)
     debug('deleting', hash)
