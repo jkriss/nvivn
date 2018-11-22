@@ -22,7 +22,7 @@ const getStore = (connectionString, opts = {}) => {
   // debug("parsed connection string", conn)
   let store
   if (type === 'file') {
-    store = new FileStore({ filepath: pathname, publicKey })
+    store = new FileStore({ path: pathname, publicKey })
   } else if (type === 'memory') {
     store = new MemoryStore({ publicKey })
   } else if (type === 'leveldb') {

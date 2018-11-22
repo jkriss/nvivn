@@ -36,13 +36,11 @@ const getHashPath = hash => {
 class FileStore {
   constructor(opts = {}) {
     this.publicKey = opts.publicKey
-    const filename = opts.filename || 'messages.txt'
-    this.filepath =
-      opts.filepath || path.join(opts.path || process.cwd(), filename)
-    this.hashesFilepath = this.filepath + '-hashes'
-    debug('storing hashes at', this.hashesFilepath)
+    this.path = opts.path || 'messages'
+
+    this.filepath = path.join(this.path, 'messages.txt')
+    this.hashesFilepath = path.join(this.path, 'hashes')
     this.hashes = blobStore(this.hashesFilepath)
-    // this.deleteHash = promisify(this.hashes.remove).bind(this.hashes)
     this.hashExists = promisify(this.hashes.exists).bind(this.hashes)
     this.operationQueue = new PQueue({ concurrency: 1 })
   }
@@ -123,8 +121,10 @@ class FileStore {
     const exists = await this.exists(message.meta.hash)
     debug(`${message.meta.hash} exists already? ${exists}`)
     if (!exists) {
-      const sig = message.meta.signed.find(s => s.publicKey === this.publicKey)
-      const seen = sig.t
+      const sig =
+        message.meta.signed &&
+        message.meta.signed.find(s => s.publicKey === this.publicKey)
+      const seen = (sig && sig.t) || Date.now()
       await this.writeHash(message.meta.hash, { seen })
       // return fs.appendFile(this.filepath, JSON.stringify(message) + '\n')
       return new Promise((resolve, reject) => {
