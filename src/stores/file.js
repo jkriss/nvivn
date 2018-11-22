@@ -223,7 +223,7 @@ class FileStore {
         if (obj) {
           const passesSince = sinceCheck(obj)
           if (!passesSince) {
-            debug(`message is older than since query`, obj, 'returning')
+            // debug(`message is older than since query`, obj, 'returning')
             readStream.destroy()
             done = true
             break
