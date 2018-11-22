@@ -38,7 +38,7 @@ class FileStore {
   constructor(opts = {}) {
     this.publicKey = opts.publicKey
     this.path = opts.path || 'messages'
-    this.datePattern = opts.datePattern || 'YYYY-MM'
+    this.datePattern = opts.datePattern || 'YYYY-MM-DD'
     this.hashesFilepath = path.join(this.path, 'hashes')
     this.hashes = blobStore(this.hashesFilepath)
     this.hashExists = promisify(this.hashes.exists).bind(this.hashes)
