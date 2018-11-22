@@ -5,9 +5,15 @@ const MemoryStore = require('../stores/memory')
 const LevelStore = require('../../src/stores/level')
 const NedbStore = require('../../src/stores/nedb')
 const level = require('level')
+const multibase = require('multibase')
 
 const getStore = (connectionString, opts = {}) => {
-  const publicKey = opts.publicKey
+  let publicKey = opts.publicKey
+  if (!publicKey) {
+    publicKey = multibase
+      .encode('base58flickr', multibase.decode(process.env.NVIVN_PUBLIC_KEY))
+      .toString()
+  }
   if (!connectionString) connectionString = process.env.NVIVN_MESSAGE_STORE
   if (!connectionString) return null
   debug('getting store for', connectionString)

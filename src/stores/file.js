@@ -55,10 +55,10 @@ class FileStore {
       })
     })
   }
-  async writeHash(hash) {
+  async writeHash(hash, data) {
     return new Promise((resolve, reject) => {
       const ws = this.hashes.createWriteStream(getHashPath(hash))
-      ws.write('')
+      ws.write(JSON.stringify(data) || '')
       ws.on('error', err => reject(err))
       ws.end(() => resolve())
     })
@@ -123,7 +123,9 @@ class FileStore {
     const exists = await this.exists(message.meta.hash)
     debug(`${message.meta.hash} exists already? ${exists}`)
     if (!exists) {
-      await this.writeHash(message.meta.hash)
+      const sig = message.meta.signed.find(s => s.publicKey === this.publicKey)
+      const seen = sig.t
+      await this.writeHash(message.meta.hash, { seen })
       // return fs.appendFile(this.filepath, JSON.stringify(message) + '\n')
       return new Promise((resolve, reject) => {
         let out = fs.createWriteStream(this.filepath, { flags: 'a' })

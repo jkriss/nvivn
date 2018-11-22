@@ -1,6 +1,6 @@
 const fs = require('fs')
 const ndjson = require('ndjson')
-const { create, sign, post } = require('../src/index')
+const { create, post } = require('../src/index')
 const loadKeys = require('../src/util/load-keys')
 const getStore = require('../src/util/store-connection')
 
