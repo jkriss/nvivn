@@ -5,14 +5,14 @@ const loadKeys = require('../util/load-keys')
 const getStore = require('../util/store-connection')
 const url = require('url')
 const { post, list, del, verify } = require('../index')
-const multibase = require('multibase')
+const { encode } = require('../util/encoding')
 const querystring = require('querystring')
 const NodeCache = require('node-cache')
 const promisify = require('util').promisify
 
 const MAX_SIGNATURE_AGE = 30 * 1000 // 30 seconds
 const keys = loadKeys()
-const publicKey = multibase.encode('base58flickr', keys.publicKey).toString()
+const publicKey = encode(keys.publicKey)
 const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
 const cache = new NodeCache({
   stdTTL: MAX_SIGNATURE_AGE / 1000,

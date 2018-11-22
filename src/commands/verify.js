@@ -1,6 +1,6 @@
 const debug = require('debug')('nvivn:verify')
 const stringify = require('fast-json-stable-stringify')
-const multibase = require('multibase')
+const { decode } = require('../util/encoding')
 const signatures = require('sodium-signatures')
 const without = require('../util/without')
 const hash = require('../util/hash')
@@ -32,16 +32,21 @@ const verify = message => {
   )) {
     debug('checking', publicKey, signature)
     debug('payload:', payload)
-    const pubKeyBuffer = multibase.decode(publicKey)
-    const signatureBuffer = multibase.decode(signature)
+    const pubKeyBuffer = decode(publicKey)
+    const signatureBuffer = decode(signature)
     const payloadBuffer = Buffer.from(payload)
-    const verificationResult = signatures.verify(
-      payloadBuffer,
-      signatureBuffer,
-      pubKeyBuffer
-    )
-    debug('valid?', verificationResult)
-    results.push(verificationResult)
+    try {
+      const verificationResult = signatures.verify(
+        payloadBuffer,
+        signatureBuffer,
+        pubKeyBuffer
+      )
+      debug('valid?', verificationResult)
+      results.push(verificationResult)
+    } catch (err) {
+      debug('Error validating', err)
+      results.push(false)
+    }
   }
   return results
 }

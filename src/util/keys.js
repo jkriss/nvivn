@@ -1,11 +1,11 @@
 const signatures = require('sodium-signatures')
-const multibase = require('multibase')
+const { encode } = require('./encoding')
 
 const generate = () => {
   const keys = signatures.keyPair()
   return {
-    publicKey: multibase.encode('base64', keys.publicKey).toString(),
-    secretKey: multibase.encode('base64', keys.secretKey).toString(),
+    publicKey: encode(keys.publicKey),
+    secretKey: encode(keys.secretKey),
   }
 }
 

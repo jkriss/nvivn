@@ -1,6 +1,6 @@
 const tap = require('tap')
 const signatures = require('sodium-signatures')
-const multibase = require('multibase')
+const { decode } = require('../../src/util/encoding')
 const { create, post } = require('../../src/index')
 const MemoryStore = require('../../src/stores/memory')
 
@@ -22,5 +22,5 @@ tap.test('post a message, sign if there are keys provided', async function(t) {
   t.ok(posted.meta)
   t.same(posted.meta.signed[0].type, 'route')
   t.same(typeof posted.meta.signed[0].publicKey, 'string')
-  t.same(keys.publicKey, multibase.decode(posted.meta.signed[0].publicKey))
+  t.same(keys.publicKey, decode(posted.meta.signed[0].publicKey))
 })

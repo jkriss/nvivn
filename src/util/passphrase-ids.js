@@ -3,7 +3,7 @@ const scrypt = require('scrypt-async')
 const sodium = require('sodium-universal')
 const zxcvbn = require('zxcvbn')
 const signatures = require('sodium-signatures')
-const multibase = require('multibase')
+const { encode } = require('./encoding')
 
 function getScryptKey(key, salt, callback) {
   const opts = {
@@ -39,8 +39,8 @@ function generateId(username, passphrase) {
     }
     getKeyPair(passphrase, username, keyPair => {
       resolve({
-        publicKey: multibase.encode('base64', keyPair.publicKey).toString(),
-        secretKey: multibase.encode('base64', keyPair.secretKey).toString(),
+        publicKey: encode(keyPair.publicKey),
+        secretKey: encode(keyPair.secretKey),
       })
     })
   })

@@ -1,11 +1,11 @@
 require('dotenv').config()
-const multibase = require('multibase')
+const { decode } = require('./encoding')
 
 const loadKeys = () => {
   if (process.env.NVIVN_PUBLIC_KEY) {
     return {
-      publicKey: multibase.decode(process.env.NVIVN_PUBLIC_KEY),
-      secretKey: multibase.decode(process.env.NVIVN_SECRET_KEY),
+      publicKey: decode(process.env.NVIVN_PUBLIC_KEY),
+      secretKey: decode(process.env.NVIVN_SECRET_KEY),
     }
   }
 }

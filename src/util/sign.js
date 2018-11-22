@@ -2,7 +2,7 @@ const debug = require('debug')('nvivn:util:sign')
 const without = require('../util/without')
 const normalizedNonMeta = require('../util/normalized-non-meta')
 const signatures = require('sodium-signatures')
-const multibase = require('multibase')
+const { encode } = require('../util/encoding')
 
 const signPayload = (message, secretKeyBuffer) => {
   debug('signing', normalizedNonMeta(message))
@@ -10,7 +10,7 @@ const signPayload = (message, secretKeyBuffer) => {
     Buffer.from(normalizedNonMeta(message)),
     secretKeyBuffer
   )
-  return multibase.encode('base58flickr', signature).toString()
+  return encode(signature)
 }
 
 const sign = (message, opts = {}) => {
@@ -23,7 +23,7 @@ const sign = (message, opts = {}) => {
   }
   const signature = signPayload(objToSign, opts.keys.secretKey)
   return {
-    publicKey: multibase.encode('base58flickr', opts.keys.publicKey).toString(),
+    publicKey: encode(opts.keys.publicKey),
     signature,
     ...without(objToSign, 'hash'),
   }

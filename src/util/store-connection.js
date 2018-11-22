@@ -2,17 +2,15 @@ const debug = require('debug')('nvivn:store:connection')
 const url = require('url')
 const FileStore = require('../stores/file')
 const MemoryStore = require('../stores/memory')
-const LevelStore = require('../../src/stores/level')
-const NedbStore = require('../../src/stores/nedb')
+const LevelStore = require('../stores/level')
+const NedbStore = require('../stores/nedb')
 const level = require('level')
-const multibase = require('multibase')
+const { decode } = require('./encoding')
 
 const getStore = (connectionString, opts = {}) => {
   let publicKey = opts.publicKey
   if (!publicKey) {
-    publicKey = multibase
-      .encode('base58flickr', multibase.decode(process.env.NVIVN_PUBLIC_KEY))
-      .toString()
+    publicKey = process.env.NVIVN_PUBLIC_KEY
   }
   if (!connectionString) connectionString = process.env.NVIVN_MESSAGE_STORE
   if (!connectionString) return null

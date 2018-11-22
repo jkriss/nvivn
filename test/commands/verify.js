@@ -27,6 +27,9 @@ tap.test('fail if the signature is bad', async function(t) {
   const signed = await sign(m, { keys })
   t.ok(signed)
   t.ok(signed.meta)
-  m.meta.signed[0].signature += '4'
+  m.meta.signed[0].signature =
+    'hsRspoTUim4igk+DplG4qiGwPpd6AGjaBmT36JcCY8zfON1dLcl4BDTSN6whA3NBt260SzUMqA+gowVb6QvCDQ=='
+  t.same(verify(m), [false])
+  m.meta.signed[0].signature = 'nope'
   t.same(verify(m), [false])
 })
