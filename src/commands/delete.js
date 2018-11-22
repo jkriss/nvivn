@@ -5,6 +5,8 @@ const del = async (hash, opts = {}) => {
   debug('message store:', opts.messageStore)
   if (opts.messageStore) {
     // get the message
+    const mExists = await opts.messageStore.exists(hash)
+    if (!mExists) return
     const m = await opts.messageStore.get(hash)
     debug('deleting message', m)
     if (m) {

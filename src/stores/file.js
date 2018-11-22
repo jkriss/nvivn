@@ -65,6 +65,8 @@ class FileStore {
   }
   async get(hash) {
     debug('getting', hash)
+    const exists = await this.exists(hash)
+    if (!exists) return null
     for await (const m of this) {
       // debug('checking', m)
       if (m.meta.hash === hash) {
@@ -89,7 +91,8 @@ class FileStore {
   async _del(hash) {
     debug('!!!!! deleting', hash)
     const exists = await this.exists(hash)
-    // if (!exists) return
+    debug('exists?', exists)
+    if (!exists) return
     const tmpPath = await tmpFile()
     let writeStream = ndjson.stringify()
     let out = writeStream

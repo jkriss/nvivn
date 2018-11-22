@@ -16,7 +16,7 @@ Usage:
   nvivn create (--stdin | - | <message>...)
   nvivn sign [options] (--stdin | - | <message>)
   nvivn post [options] (--stdin | - | <message>)
-  nvivn delete [options] <hash>
+  nvivn delete [options] <hash> [--hard]
   nvivn verify (--stdin | - | <message>)
   nvivn list [options] [--new] [<filter>...]
 Options:
@@ -75,7 +75,10 @@ const run = async (args, passedOpts) => {
     result = await list(q, opts)
   } else if (args.delete) {
     debug('deleting', args['<hash>'])
-    result = await del(args['<hash>'], opts)
+    result = await del(
+      args['<hash>'],
+      Object.assign({}, opts, { hard: !!args['--hard'] })
+    )
   }
   return result
 }
