@@ -91,17 +91,21 @@ class FileStore {
     const exists = await this.exists(hash)
     debug('exists?', exists)
     if (!exists) return null
-    for await (const m of this) {
-      // debug('checking', m)
-      if (m.meta.hash === hash) {
-        if (m.expr !== undefined && m.expr <= Date.now()) {
-          this.del(m.meta.hash)
-          return null
-        } else {
-          return m
+    const file = await this.getFilepathForHash(hash)
+    const readStream = fs.createReadStream(file).pipe(ndjson.parse())
+    return new Promise(resolve => {
+      readStream.on('data', m => {
+        if (m.meta.hash === hash) {
+          if (m.expr !== undefined && m.expr <= Date.now()) {
+            this.del(m.meta.hash)
+            resolve(null)
+          } else {
+            resolve(m)
+            readStream.destroy()
+          }
         }
-      }
-    }
+      })
+    })
   }
   async exists(hash) {
     return this.hashExists(getHashPath(hash))
@@ -124,10 +128,6 @@ class FileStore {
     const file = await this.getFilepathForHash(hash)
     const readStream = fs.createReadStream(file).pipe(ndjson.parse())
     out.pipe(fs.createWriteStream(tmpPath))
-    // for await (const m of this.filter(null, {
-    //   skipDeletes: true,
-    //   backwards: false,
-    // })) {
     readStream.on('data', m => {
       if (m.meta.hash !== hash) {
         writeStream.write(m)
