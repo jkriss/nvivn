@@ -11,6 +11,7 @@ const PQueue = require('p-queue')
 const backwardsStream = require('fs-reverse')
 const through2 = require('through2')
 const sinceExtractor = require('../util/since')
+const fecha = require('fecha')
 
 const waitUntilReadable = stream => {
   return new Promise((resolve, reject) => {
@@ -37,12 +38,37 @@ class FileStore {
   constructor(opts = {}) {
     this.publicKey = opts.publicKey
     this.path = opts.path || 'messages'
-
-    this.filepath = path.join(this.path, 'messages.txt')
+    this.datePattern = opts.datePattern || 'YYYY-MM'
+    // this.datePattern = opts.datePattern || 'YYYY-MM-DD-HH-mm'
     this.hashesFilepath = path.join(this.path, 'hashes')
     this.hashes = blobStore(this.hashesFilepath)
     this.hashExists = promisify(this.hashes.exists).bind(this.hashes)
     this.operationQueue = new PQueue({ concurrency: 1 })
+  }
+  async getHash(hash) {
+    // const exists = await this.hashExists(hash)
+    // if (!exists) return null
+    return new Promise((resolve, reject) => {
+      const readStream = this.hashes
+        .createReadStream(getHashPath(hash))
+        .pipe(ndjson.parse())
+      readStream.on('err', err => reject(err))
+      readStream.on('data', meta => {
+        resolve(meta)
+      })
+    })
+  }
+  getFilepath(t) {
+    if (!t) t = Date.now()
+    return path.join(
+      this.path,
+      'messages',
+      fecha.format(new Date(t), this.datePattern) + '.txt'
+    )
+  }
+  async getFilepathForHash(hash) {
+    const meta = await this.getHash(hash)
+    return this.getFilepath(meta.seen)
   }
   async deleteHash(hashPath) {
     debug('!! deleting hash path', hashPath)
@@ -64,6 +90,7 @@ class FileStore {
   async get(hash) {
     debug('getting', hash)
     const exists = await this.exists(hash)
+    debug('exists?', exists)
     if (!exists) return null
     for await (const m of this) {
       // debug('checking', m)
@@ -95,19 +122,25 @@ class FileStore {
     let writeStream = ndjson.stringify()
     let out = writeStream
 
+    const file = await this.getFilepathForHash(hash)
+    const readStream = fs.createReadStream(file).pipe(ndjson.parse())
     out.pipe(fs.createWriteStream(tmpPath))
-    for await (const m of this.filter(null, {
-      skipDeletes: true,
-      backwards: false,
-    })) {
+    // for await (const m of this.filter(null, {
+    //   skipDeletes: true,
+    //   backwards: false,
+    // })) {
+    readStream.on('data', m => {
       if (m.meta.hash !== hash) {
         writeStream.write(m)
       }
-    }
-    await new Promise(resolve => {
-      writeStream.end(() => resolve())
     })
-    await fs.move(tmpPath, this.filepath, { overwrite: true })
+    // }
+    await new Promise(resolve => {
+      readStream.on('end', () => {
+        writeStream.end(() => resolve())
+      })
+    })
+    await fs.move(tmpPath, file, { overwrite: true })
     debug('this.del deleting hash')
     await this.deleteHash(getHashPath(hash))
   }
@@ -126,15 +159,17 @@ class FileStore {
         message.meta.signed.find(s => s.publicKey === this.publicKey)
       const seen = (sig && sig.t) || Date.now()
       await this.writeHash(message.meta.hash, { seen })
+      const file = await this.getFilepath(seen)
       // return fs.appendFile(this.filepath, JSON.stringify(message) + '\n')
-      return new Promise((resolve, reject) => {
-        let out = fs.createWriteStream(this.filepath, { flags: 'a' })
+      return new Promise(async (resolve, reject) => {
+        await fs.ensureFile(file)
+        let out = fs.createWriteStream(file, { flags: 'a' })
         out.on('error', err => {
           reject(err)
         })
         debug('writing stringified object')
         out.end(JSON.stringify(message) + '\n', () => {
-          debug('!! finished write !!')
+          debug('!! finished write !!', message.meta.hash)
           resolve()
         })
       })
@@ -143,8 +178,7 @@ class FileStore {
     }
   }
   async clear() {
-    await fs.writeFile(this.filepath, '')
-    await fs.remove(this.hashesFilepath)
+    await fs.remove(this.path)
   }
   async *messageGenerator(q, opts = {}) {
     let sinceCheck = () => true
@@ -156,54 +190,64 @@ class FileStore {
       q && Object.keys(q).length > 0
         ? filter(q, { publicKey: this.publicKey })
         : null
-    await fs.ensureFile(this.filepath)
-    let readStream
-    if (opts.backwards) {
-      const addLine = through2.obj(function(chunk, enc, callback) {
-        // console.log("!!! got chunk", chunk, JSON.stringify(chunk))
-        if (chunk.trim() !== '') this.push(chunk + '\n')
-        callback()
-      })
-      readStream = backwardsStream(this.filepath)
-        .pipe(addLine)
-        .pipe(ndjson.parse())
-    } else {
-      readStream = fs.createReadStream(this.filepath).pipe(ndjson.parse())
-    }
-    await waitUntilReadable(readStream)
-    let obj
-    do {
-      obj = readStream.read()
-      if (!obj) {
-        await waitUntilReadable(readStream)
+    // await fs.ensureFile(this.filepath)
+    let files = await fs.readdir(path.join(this.path, 'messages'))
+    // sort these so they're newest first
+    files = files.sort()
+    if (opts.backwards) files = files.reverse()
+    files = files.map(f => path.join(this.path, 'messages', f))
+    debug('reading files', files)
+    let done = false
+    for (const file of files) {
+      if (done) break
+      let readStream
+      if (opts.backwards) {
+        const addLine = through2.obj(function(chunk, enc, callback) {
+          // console.log("!!! got chunk", chunk, JSON.stringify(chunk))
+          if (chunk.trim() !== '') this.push(chunk + '\n')
+          callback()
+        })
+        readStream = backwardsStream(file)
+          .pipe(addLine)
+          .pipe(ndjson.parse())
+      } else {
+        readStream = fs.createReadStream(file).pipe(ndjson.parse())
+      }
+      await waitUntilReadable(readStream)
+      let obj
+      do {
         obj = readStream.read()
-      }
-      if (obj) {
-        const passesSince = sinceCheck(obj)
-        if (!passesSince) {
-          debug(`message is older than since query`, obj, 'returning')
-          readStream.destroy()
-          break
+        if (!obj) {
+          await waitUntilReadable(readStream)
+          obj = readStream.read()
         }
-        const expired = obj.expr !== undefined && obj.expr <= Date.now()
-        // debug("!! expired?", expired)
-        if (!expired) {
-          if (!f || (f && f(obj))) {
-            yield await obj
+        if (obj) {
+          const passesSince = sinceCheck(obj)
+          if (!passesSince) {
+            debug(`message is older than since query`, obj, 'returning')
+            readStream.destroy()
+            done = true
+            break
           }
-        } else if (!opts.skipDeletes) {
-          debug('deleting', obj.meta.hash)
-          deleteQueue.push(obj.meta.hash)
-          // await this.del(obj.meta.hash)
+          const expired = obj.expr !== undefined && obj.expr <= Date.now()
+          // debug("!! expired?", expired)
+          if (!expired) {
+            if (!f || (f && f(obj))) {
+              yield await obj
+            }
+          } else if (!opts.skipDeletes) {
+            debug('deleting', obj.meta.hash)
+            deleteQueue.push(obj.meta.hash)
+            // await this.del(obj.meta.hash)
+          }
         }
-      }
-    } while (obj)
+      } while (obj)
+    }
     for (const h of deleteQueue) {
       debug('actually deleting', h)
       await this.del(h)
       debug('done deleting', h)
     }
-    // await Promise.all(deleteQueue.map(h => this.del(h)))
   }
 
   filter(q, opts) {
