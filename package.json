@@ -1,6 +1,6 @@
 {
-  "name": "nvivn",
-  "version": "0.0.1",
+  "name": "@nvivn/core",
+  "version": "0.0.3",
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
   "main": "src/index.js",
@@ -20,6 +20,7 @@
     "debug": "^4.1.0",
     "docopt": "^0.6.2",
     "dotenv": "^6.1.0",
+    "fast-json-stable-stringify": "^2.0.0",
     "fecha": "^3.0.0",
     "fs-blob-store": "^5.2.1",
     "fs-extra": "^7.0.1",

@@ -2,9 +2,18 @@ const debug = require('debug')('nvivn:store:connection')
 const url = require('url')
 const FileStore = require('../stores/file')
 const MemoryStore = require('../stores/memory')
-const LevelStore = require('../stores/level')
-const NedbStore = require('../stores/nedb')
-const level = require('level')
+let LevelStore
+let NedbStore
+try {
+  LevelStore = require('../stores/level')
+} catch (err) {
+  console.error('Install leveldb to use the LevelStore')
+}
+try {
+  NedbStore = require('../stores/nedb')
+} catch (err) {
+  console.error('Install nedb to use the NedbStore')
+}
 const { decode } = require('./encoding')
 
 const getStore = (connectionString, opts = {}) => {
@@ -24,6 +33,7 @@ const getStore = (connectionString, opts = {}) => {
   } else if (type === 'memory') {
     store = new MemoryStore({ publicKey })
   } else if (type === 'leveldb') {
+    const level = require('level')
     const db = level(pathname)
     store = new LevelStore({ db, publicKey })
   } else if (type === 'nedb') {

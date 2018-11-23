@@ -1,10 +1,11 @@
 const fs = require('fs')
 const ndjson = require('ndjson')
-const { create, post } = require('../src/index')
+const { create, post, sign } = require('../src/index')
+const remoteRun = require('../src/util/remote-run')
 const loadKeys = require('../src/util/load-keys')
 const getStore = require('../src/util/store-connection')
 
-const importMessages = async file => {
+const importMessages = async (file, hub) => {
   const keys = loadKeys()
   const messageStore = getStore()
   const readStream = fs
@@ -19,11 +20,26 @@ const importMessages = async file => {
         source: 'pinboard',
         body: obj,
       })
-      const posted = await post(m, { keys, messageStore })
-      console.log(JSON.stringify(posted))
+      if (hub) {
+        const signed = await sign(m, { keys })
+        const command = {
+          type: 'command',
+          command: 'post',
+          args: {
+            message: signed,
+          },
+        }
+        const createdCommand = await create(command)
+        const signedCommand = await sign(createdCommand, { keys })
+        const posted = await remoteRun(signedCommand, hub)
+      } else {
+        const posted = await post(m, { keys, messageStore })
+        console.log(JSON.stringify(posted))
+      }
     })
 }
 
 if (require.main === module) {
-  importMessages(process.argv.slice(2)[0])
+  const args = process.argv.slice(2)
+  importMessages(args[0], args[1])
 }
