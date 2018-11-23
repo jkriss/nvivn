@@ -38,6 +38,7 @@ class FileStore {
   constructor(opts = {}) {
     this.publicKey = opts.publicKey
     this.path = opts.path || 'messages'
+    this.messagesDir = path.join(this.path, 'messages')
     this.datePattern = opts.datePattern || 'YYYY-MM-DD'
     this.hashesFilepath = path.join(this.path, 'hashes')
     this.hashes = blobStore(this.hashesFilepath)
@@ -60,8 +61,7 @@ class FileStore {
   getFilepath(t) {
     if (!t) t = Date.now()
     return path.join(
-      this.path,
-      'messages',
+      this.messagesDir,
       fecha.format(new Date(t), this.datePattern) + '.txt'
     )
   }
@@ -190,11 +190,12 @@ class FileStore {
         ? filter(q, { publicKey: this.publicKey })
         : null
     // await fs.ensureFile(this.filepath)
-    let files = await fs.readdir(path.join(this.path, 'messages'))
+    await fs.ensureDir(this.messagesDir)
+    let files = await fs.readdir(this.messagesDir)
     // sort these so they're newest first
     files = files.sort()
     if (opts.backwards) files = files.reverse()
-    files = files.map(f => path.join(this.path, 'messages', f))
+    files = files.map(f => path.join(this.messagesDir, f))
     debug('reading files', files)
     let done = false
     for (const file of files) {
