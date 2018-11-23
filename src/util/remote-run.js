@@ -10,7 +10,11 @@ const remoteRun = async (message, host) => {
     body: JSON.stringify(message),
   })
   if (res.status !== 200) {
-    throw new Error(res.statusText)
+    let body
+    try {
+      body = await res.json()
+    } catch (err) {}
+    throw new Error(`${body ? `${body.message}: ` : ''}${res.statusText}`)
   }
   // TODO make an async iterator for the lines in the response
   const body = await res.text()

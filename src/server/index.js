@@ -1,5 +1,7 @@
+#!/usr/bin/env node
 require('dotenv').config()
 const debug = require('debug')('nvivn:server')
+const micro = require('micro')
 const { send, json } = require('micro')
 const loadKeys = require('../util/load-keys')
 const getStore = require('../util/store-connection')
@@ -13,6 +15,7 @@ const promisify = require('util').promisify
 const MAX_SIGNATURE_AGE = 30 * 1000 // 30 seconds
 const keys = loadKeys()
 const publicKey = encode(keys.publicKey)
+const trustedKeys = (process.env.NVIVN_TRUSTED_KEYS || '').trim().split(/\s+/)
 const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
 const cache = new NodeCache({
   stdTTL: MAX_SIGNATURE_AGE / 1000,
@@ -23,7 +26,10 @@ const setCache = promisify(cache.set).bind(cache)
 const getCache = promisify(cache.get).bind(cache)
 
 const isAllowed = (command, userPublicKey, message) => {
-  return userPublicKey === publicKey
+  const allowed =
+    userPublicKey === publicKey || trustedKeys.includes(userPublicKey)
+  debug(command, 'allowed for', userPublicKey, allowed)
+  return allowed
 }
 
 const runCommand = async (command, args) => {
@@ -76,13 +82,15 @@ module.exports = async (req, res) => {
         return send(res, 401, { message: 'command has already been run' })
       }
       debug('command run by', users)
-      const commandAllowed = !users
-        .map(u => isAllowed(message.command, u))
-        .find(result => result === false)
+      const trueResults = users
+        .map(u => isAllowed(message.command, u, message))
+        .filter(result => result === true)
+      debug('trueResults:', trueResults, 'users length', users.length)
+      const commandAllowed = trueResults.length === users.length
       debug('command allowed?', commandAllowed)
       if (!commandAllowed) {
         return send(res, 403, {
-          message: `not allowed to run ${mesage.command}`,
+          message: `not allowed to run ${message.command}`,
         })
       } else {
         setCache(message.meta.hash, true)
@@ -109,4 +117,12 @@ module.exports = async (req, res) => {
     }
   }
   res.end()
+}
+
+if (require.main === module) {
+  const port = process.env.PORT || 3000
+  const server = micro(module.exports)
+  server.listen(port, () =>
+    console.log(`Listening at http://localhost:${port}`)
+  )
 }

@@ -13,7 +13,7 @@ const getStore = (connectionString, opts = {}) => {
     publicKey = process.env.NVIVN_PUBLIC_KEY
   }
   if (!connectionString) connectionString = process.env.NVIVN_MESSAGE_STORE
-  if (!connectionString) return null
+  if (!connectionString) connectionString = 'file:./messages'
   debug('getting store for', connectionString)
   // const conn = url.parse(connectionString)
   const [type, pathname] = connectionString.split(':')
