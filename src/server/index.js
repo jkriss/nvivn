@@ -22,15 +22,20 @@ const cache = new NodeCache({
 const setCache = promisify(cache.set).bind(cache)
 const getCache = promisify(cache.get).bind(cache)
 
-const isAllowed = (command, userPublicKey) => {
+const isAllowed = (command, userPublicKey, message) => {
   return userPublicKey === publicKey
 }
 
 const runCommand = async (command, args) => {
   debug('running command', command, 'with arguments', args)
+  const opts = { messageStore, keys }
   let result
   if (command === 'list') {
-    result = await list(args, { messageStore, keys })
+    result = await list(args, opts)
+  } else if (command === 'post') {
+    result = await post(args.message, opts)
+  } else if (command === 'delete') {
+    result = await del(args.hash, Object.assign({}, opts, { hard: args.hard }))
   }
   return result
 }
@@ -45,7 +50,8 @@ module.exports = async (req, res) => {
   const limit = q.limit || 100
   delete q.limit
   if (req.method === 'GET') {
-    // TODO pull this once commands are implemented
+    // TODO pull this once commands are implemented?
+    // this can remain if anonymous reads are allowed
     result = await list(q, opts)
   } else if (req.method === 'POST') {
     const message = await json(req)
@@ -82,16 +88,7 @@ module.exports = async (req, res) => {
         setCache(message.meta.hash, true)
         result = await runCommand(message.command, message.args)
       }
-    } else {
-      debug('posting', message)
-      // TODO validate this before writing
-      // TODO check to see if this author is allowed to post
-      result = await post(message, opts)
     }
-  } else if (req.method === 'DELETE') {
-    const hash = requestUrl.pathname.slice(1)
-    debug('deleting', hash)
-    result = await del(hash, Object.assign({}, opts, q))
   } else {
     return send(res, 404)
   }

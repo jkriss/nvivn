@@ -6,6 +6,7 @@ const keys = require('./util/keys')
 const loadKeys = require('./util/load-keys')
 const generateId = require('./util/passphrase-ids')
 const oyaml = require('oyaml')
+const remoteRun = require('./util/remote-run')
 
 const doc = `
 nvivn
@@ -41,7 +42,28 @@ const run = async (args, passedOpts) => {
   const opts = Object.assign({}, passedOpts)
   opts.keys = loadKeys()
   debug('args:', args)
-  if (args.create) {
+  if (args['--hub']) {
+    const command = Object.keys(args).find(
+      a => a[0].match(/[a-z]/i) && args[a] === true
+    )
+    debug(`generating command ${command} for remote hub`, args['--hub'])
+    const m = { command, type: 'command' }
+    // for now, the format is different per command
+    if (command === 'list') {
+      const q = oyaml.parse(args['<filter>'].join(' '), { unflatten: false })
+      m.args = q
+    } else if (command === 'post') {
+      m.args = { message: args['<message>'] }
+    } else if (command === 'delete') {
+      m.args = { hash: args['<hash>'], hard: args['--hard'] }
+    }
+    // create and sign
+    const fullMessage = await create(m, opts)
+    const signedMessage = await sign(fullMessage, opts)
+    debug('signed message:', signedMessage)
+    // run against remote host
+    result = await remoteRun(signedMessage, args['--hub'])
+  } else if (args.create) {
     let message = Array.isArray(args['<message>'])
       ? args['<message>'][0]
       : args['<message>']

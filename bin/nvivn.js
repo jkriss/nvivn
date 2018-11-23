@@ -28,15 +28,17 @@ const getPassphrase = () => {
 const publicKey = process.env.NVIVN_PUBLIC_KEY
 const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
 
-nvivn(undefined, { getPassphrase, messageStore }).then(async result => {
-  debug('result:', result)
-  if (typeof result === 'undefined') return
-  const iterableResult =
-    typeof result !== 'string' &&
-    (result[Symbol.asyncIterator] || result[Symbol.iterator])
-      ? result
-      : [result]
-  for await (const r of iterableResult) {
-    console.log(typeof r === 'string' ? r : JSON.stringify(r))
-  }
-})
+nvivn(undefined, { getPassphrase, messageStore })
+  .then(async result => {
+    debug('result:', result)
+    if (typeof result === 'undefined') return
+    const iterableResult =
+      typeof result !== 'string' &&
+      (result[Symbol.asyncIterator] || result[Symbol.iterator])
+        ? result
+        : [result]
+    for await (const r of iterableResult) {
+      process.stdout.write(typeof r === 'string' ? r : JSON.stringify(r) + '\n')
+    }
+  })
+  .catch(console.error)
