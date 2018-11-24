@@ -14,13 +14,14 @@ Usage:
   nvivn generate [--env]
   nvivn login [--env] <username>
   nvivn logout <username>
-  nvivn create (--stdin | - | <message>...)
+  nvivn create [--nosign] (--stdin | - | <message>...)
   nvivn sign [options] (--stdin | - | <message>)
   nvivn post [options] (--stdin | - | <message>)
   nvivn delete [options] <hash> [--hard]
   nvivn verify (--stdin | - | <message>)
   nvivn list [options] [--new] [<filter>...]
 Options:
+  --type <type>   Type of signature
   --hub <hub>     Communicate with a remote hub.
   -h --help       Show this screen.
   --version       Show version.
@@ -75,8 +76,10 @@ const run = async (args, passedOpts) => {
         message = JSON.parse(message)
       } catch (err2) {}
     }
+    if (args['--nosign']) opts.skipSignature = true
     result = create(message, opts)
   } else if (args.sign) {
+    opts.signProps = { type: args['--type'] }
     result = sign(args['<message>'], opts)
   } else if (args.generate) {
     result = keys.generate()
