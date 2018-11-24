@@ -1,8 +1,7 @@
 const hash = require('../util/hash')
 const datemath = require('datemath-parser')
-const sign = require('./sign')
 
-const create = (input, opts) => {
+const create = input => {
   let message
   if (typeof input === 'string') {
     message = { body: input }
@@ -21,12 +20,6 @@ const create = (input, opts) => {
   }
   if (!m.meta) m.meta = {}
   if (!m.meta.hash) m.meta.hash = hash(m)
-  if (!opts.skipSignature && opts.keys) {
-    m = sign(m, {
-      keys: opts.keys,
-      signProps: { type: opts.signatureType || 'author' },
-    })
-  }
   return m
 }
 

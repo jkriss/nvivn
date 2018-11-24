@@ -76,10 +76,10 @@ const run = async (args, passedOpts) => {
         message = JSON.parse(message)
       } catch (err2) {}
     }
-    if (args['--nosign']) opts.skipSignature = true
     result = create(message, opts)
   } else if (args.sign) {
-    opts.signProps = { type: args['--type'] }
+    opts.signProps = {}
+    if (args['--type']) opts.signProps.type = args['--type']
     result = sign(args['<message>'], opts)
   } else if (args.generate) {
     result = keys.generate()
