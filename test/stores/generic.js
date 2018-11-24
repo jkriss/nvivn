@@ -96,7 +96,7 @@ module.exports = (StoreClass, opts = {}) => {
     await store.write(m2)
     let items = 0
     const hashes = []
-    for await (m of store) {
+    for await (const m of store) {
       items++
       hashes.push(m.meta.hash)
     }

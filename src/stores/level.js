@@ -1,13 +1,16 @@
 const debug = require('debug')('nvivn:store:level')
-const ttl = require('level-ttl')
 const filter = require('../util/filter')
 
-const awaitNext = iterator => {
+const awaitNext = (iterator, opts = {}) => {
   return new Promise((resolve, reject) => {
-    iterator.next((err, val) => {
+    iterator.next((err, key, val) => {
       if (err) return reject(err)
       debug('next iterator value:', val)
-      resolve(val ? val.toString() : undefined)
+      if (opts.returnValue === 'value') {
+        resolve(val ? val.toString() : undefined)
+      } else {
+        resolve(key ? key.toString() : undefined)
+      }
     })
   })
 }
@@ -17,29 +20,24 @@ class LevelStore {
     if (!opts.db)
       throw new Error('Must supply a db argument with a level instance')
     this.db = opts.db
-    const checkFrequency = opts.checkFrequency || 10000
-    debug('setting ttl check to', checkFrequency)
-    ttl(this.db, { checkFrequency })
   }
   write(message) {
-    // console.log("saving", message.meta.hash)
-    const ttlOpts = {}
-    if (message.expr !== undefined) {
-      ttlOpts.ttl = Math.max(1, message.expr - Date.now())
-      debug('!! set ttl to', ttlOpts.ttl)
-    }
-    return this.db.put(message.meta.hash, JSON.stringify(message), ttlOpts)
+    return this.db.put(message.meta.hash, JSON.stringify(message))
   }
   async get(hash) {
     let result
     try {
       result = await this.db.get(hash)
     } catch (err) {
-      // debug("!!!! catching error", err)
       if (err.notFound) return null
       throw err
     }
-    return result ? JSON.parse(result.toString()) : null
+    const m = JSON.parse(result.toString())
+    if (m && m.expr !== undefined && m.expr <= Date.now()) {
+      this.del(m.meta.hash)
+      return null
+    }
+    return m
   }
   async exists(hash) {
     const result = await this.get(hash)
@@ -47,10 +45,10 @@ class LevelStore {
   }
   async clear() {
     const iterator = this.db.iterator()
-    let hash = await awaitNext(iterator)
+    let hash = await awaitNext(iterator, { returnValue: 'key' })
     while (hash) {
       await this.del(hash)
-      hash = await awaitNext(iterator)
+      hash = await awaitNext(iterator, { returnValue: 'key' })
     }
   }
   async del(hash) {
@@ -60,13 +58,17 @@ class LevelStore {
   async *messageGenerator(q) {
     const f = q ? filter(q) : null
     const iterator = this.db.iterator()
-    let hash = await awaitNext(iterator)
-    while (hash) {
-      const m = await this.get(hash)
+    let m = await awaitNext(iterator, { returnValue: 'value' })
+    while (m) {
+      m = JSON.parse(m)
       if (!f || (f && f(m))) {
-        yield m
+        if (m && m.expr !== undefined && m.expr <= Date.now()) {
+          this.del(m.meta.hash)
+        } else {
+          yield m
+        }
       }
-      hash = await awaitNext(iterator)
+      m = await awaitNext(iterator, { returnValue: 'value' })
     }
   }
   filter(q) {
