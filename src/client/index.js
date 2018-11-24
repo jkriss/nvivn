@@ -1,3 +1,4 @@
+const debug = require('debug')('nvivn:client')
 const { create, sign, list, del, post } = require('../index')
 const remoteRun = require('../util/remote-run')
 
