@@ -123,6 +123,7 @@ module.exports = {
   parse,
   run,
   nvivn,
+  doc,
 }
 
 if (require.main === module) {

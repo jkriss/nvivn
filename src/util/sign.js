@@ -14,6 +14,7 @@ const signPayload = (message, secretKeyBuffer) => {
 }
 
 const sign = (message, opts = {}) => {
+  debug('signing', message)
   const t = Date.now()
   const signProps = opts.signProps || {}
   const objToSign = {

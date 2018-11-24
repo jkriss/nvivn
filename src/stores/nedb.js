@@ -1,5 +1,5 @@
 const Datastore = require('nedb')
-const promisify = require('util').promisify
+const { promisify } = require('es6-promisify')
 const without = require('../util/without')
 const datemath = require('datemath-parser')
 

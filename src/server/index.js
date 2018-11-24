@@ -11,6 +11,7 @@ const { encode } = require('../util/encoding')
 const querystring = require('querystring')
 const NodeCache = require('node-cache')
 const promisify = require('util').promisify
+const cors = require('micro-cors')()
 
 const MAX_SIGNATURE_AGE = 30 * 1000 // 30 seconds
 const keys = loadKeys()
@@ -46,7 +47,8 @@ const runCommand = async (command, args) => {
   return result
 }
 
-module.exports = async (req, res) => {
+const handler = async (req, res) => {
+  if (req.method === 'OPTIONS') return send(res, 200)
   const requestUrl = url.parse(req.url)
   // const path = requestUrl.pathname
   const opts = { messageStore, keys }
@@ -119,6 +121,8 @@ module.exports = async (req, res) => {
   }
   res.end()
 }
+
+module.exports = cors(handler)
 
 if (require.main === module) {
   const port = process.env.PORT || 3000
