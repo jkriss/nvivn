@@ -101,6 +101,7 @@ module.exports = async (req, res) => {
     return send(res, 404)
   }
   debug('result:', result)
+  res.setHeader('Content-Type', 'application/json')
   if (typeof result !== 'undefined') {
     const iterableResult =
       result[Symbol.asyncIterator] || result[Symbol.iterator]
