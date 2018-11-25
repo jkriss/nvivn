@@ -1,7 +1,5 @@
 const debug = require('debug')('nvivn:store:connection')
 const url = require('url')
-const MemoryStore = require('../stores/memory')
-const LevelStore = require('../stores/level')
 const { decode } = require('./encoding')
 
 const getStore = (connectionString, opts = {}) => {
@@ -20,14 +18,17 @@ const getStore = (connectionString, opts = {}) => {
     const FileStore = require('../stores/file')
     store = new FileStore({ path: pathname, publicKey })
   } else if (type === 'memory') {
+    const MemoryStore = require('../stores/memory')
     store = new MemoryStore({ publicKey })
   } else if (type === 'leveldb') {
     const level = require('level')
     const db = level(pathname)
+    const LevelStore = require('../stores/level')
     store = new LevelStore({ db, publicKey })
   } else if (type === 'leveljs') {
     const level = require('level-browserify')
     const db = level(pathname)
+    const LevelStore = require('../stores/level')
     store = new LevelStore({ db, publicKey })
   } else if (type === 'nedb') {
     const NedbStore = require('../stores/nedb')

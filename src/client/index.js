@@ -19,7 +19,7 @@ const commands = {
   },
 }
 
-const remote = async ({ command, args, hub, opts }) => {
+async function remote({ command, args, hub, opts }) {
   debug(`generating command ${command} for remote hub`, hub)
   const m = { command, type: 'command', args }
   // create and sign

@@ -38,7 +38,7 @@
     "oyaml": "^0.1.5",
     "p-queue": "^3.0.0",
     "prompt": "^1.0.0",
-    "scrypt-async": "^2.0.1",
+    "scryptsy": "^2.0.0",
     "sodium-signatures": "^2.1.1",
     "tmp": "0.0.33",
     "zxcvbn": "^4.4.2"

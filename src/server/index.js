@@ -41,7 +41,7 @@ const runCommand = async (command, args) => {
     result = await list(args, opts)
   } else if (command === 'post') {
     result = await post(args.message, opts)
-  } else if (command === 'delete') {
+  } else if (command === 'del') {
     result = await del(args.hash, Object.assign({}, opts, { hard: args.hard }))
   }
   return result
