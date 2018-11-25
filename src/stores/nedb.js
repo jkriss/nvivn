@@ -58,9 +58,18 @@ class NedbStore {
     const pageSize = 100
     const cursor = this.db.find(q).sort({ t: -1 })
 
+    let limit = -1
+    if (q && q.$limit) {
+      limit = q.$limit
+      delete q.$limit
+    }
+
     let results
     do {
-      results = await fetch(cursor, { skip: idx, limit: pageSize })
+      results = await fetch(cursor, {
+        skip: idx,
+        limit: limit !== -1 ? limit : pageSize,
+      })
       for (const m of results) {
         if (m.expr === undefined || m.expr > Date.now()) {
           yield without(m, '_id')

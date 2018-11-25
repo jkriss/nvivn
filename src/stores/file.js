@@ -180,9 +180,15 @@ class FileStore {
     await fs.remove(this.path)
   }
   async *messageGenerator(q, opts = {}) {
+    console.log('-- filtering ')
     let sinceCheck = () => true
     if (q && q.since) {
       sinceCheck = sinceExtractor({ since: q.since, publicKey: this.publicKey })
+    }
+    let limit = -1
+    if (q && q.$limit) {
+      limit = q.$limit
+      delete q.$limit
     }
     const deleteQueue = []
     const f =
@@ -198,6 +204,7 @@ class FileStore {
     files = files.map(f => path.join(this.messagesDir, f))
     debug('reading files', files)
     let done = false
+    let count = 0
     for (const file of files) {
       if (done) break
       let readStream
@@ -233,7 +240,13 @@ class FileStore {
           // debug("!! expired?", expired)
           if (!expired) {
             if (!f || (f && f(obj))) {
-              yield await obj
+              if (limit === -1 || count < limit) {
+                count++
+                yield await obj
+              } else {
+                done = true
+                break
+              }
             }
           } else if (!opts.skipDeletes) {
             debug('deleting', obj.meta.hash)

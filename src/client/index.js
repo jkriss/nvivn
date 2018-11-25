@@ -60,6 +60,9 @@ class Client {
   clear() {
     return this.defaultOpts.messageStore.clear()
   }
+  async sync(server, opts = {}) {
+    debug('syncing with', server)
+  }
   async run(command, args) {
     debug('running', command, args)
     if (this.server) debug('remote server:', this.server)

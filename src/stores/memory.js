@@ -36,8 +36,16 @@ class MemoryStore {
     this.hashes = {}
   }
   *filteredGenerator(q) {
+    let limit
+    if (q.$limit) {
+      limit = q.$limit
+      delete q.$limit
+    }
     const f = filter(q, { publicKey: this.publicKey })
+    let count = 0
     for (const m of this) {
+      count++
+      if (count > limit) break
       if (f(m)) yield m
     }
   }

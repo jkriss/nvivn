@@ -1,7 +1,7 @@
 const debug = require('debug')('nvivn:remote-run')
 const fetch = require('cross-fetch')
 
-const remoteRun = async (message, host) => {
+const remoteRun = async (message, host, opts = {}) => {
   const res = await fetch(host, {
     method: 'POST',
     headers: {
@@ -17,6 +17,7 @@ const remoteRun = async (message, host) => {
     throw new Error(`${body ? `${body.message}: ` : ''}${res.statusText}`)
   }
   // TODO make an async iterator for the lines in the response
+  if (opts.stream) return res.body
   const body = await res.text()
   return body
 }

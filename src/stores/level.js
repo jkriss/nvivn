@@ -56,8 +56,13 @@ class LevelStore {
     return this.db.del(hash)
   }
   async *messageGenerator(q) {
+    let limit = -1
+    if (q && q.$limit) {
+      limit = q.$limit
+      delete q.$limit
+    }
     const f = q ? filter(q) : null
-    const iterator = this.db.iterator()
+    const iterator = this.db.iterator({ limit })
     let m = await awaitNext(iterator, { returnValue: 'value' })
     while (m) {
       m = JSON.parse(m)
