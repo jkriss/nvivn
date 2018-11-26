@@ -54,9 +54,6 @@ const handler = async (req, res) => {
   const opts = { messageStore, keys }
   let result
   const q = querystring.parse(requestUrl.query)
-  debug('querystring:', q)
-  const limit = q.limit || 100
-  delete q.limit
   if (req.method === 'GET') {
     // TODO pull this once commands are implemented?
     // this can remain if anonymous reads are allowed
@@ -111,9 +108,6 @@ const handler = async (req, res) => {
         : [result]
     let count = 0
     for await (const r of iterableResult) {
-      if (limit && count >= limit) {
-        break
-      }
       const str = typeof r === 'string' ? r : JSON.stringify(r)
       res.write(str + '\n')
       count++

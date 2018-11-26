@@ -17,11 +17,13 @@ const fetch = async (cursor, opts = {}) => {
 
 class NedbStore {
   constructor(opts = {}) {
+    console.log('nedb opts:', opts)
     this.db = new Datastore(opts)
     ;['insert', 'find', 'findOne', 'remove'].forEach(fn => {
       if (!this.db[fn]) throw new Error(`db object doesn't have a ${fn} method`)
       this[fn] = promisify(this.db[fn]).bind(this.db)
     })
+    this.publicKey = opts.publicKey
     this.db.ensureIndex({ fieldName: 'meta.hash' })
     this.db.ensureIndex({ fieldName: 't' })
     this.db.ensureIndex({ fieldName: 'type' })

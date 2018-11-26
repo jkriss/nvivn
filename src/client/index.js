@@ -28,11 +28,7 @@ async function remote({ command, args, hub, opts }) {
   debug('signed message:', signedMessage)
   // run against remote host
   const result = await remoteRun(signedMessage, hub)
-  if (result.trim() === '') return []
   return result
-    .trim()
-    .split('\n')
-    .map(JSON.parse)
 }
 
 class Client {
@@ -61,7 +57,17 @@ class Client {
     return this.defaultOpts.messageStore.clear()
   }
   async sync(server, opts = {}) {
-    debug('syncing with', server)
+    debug('syncing with', server, 'with opts', opts)
+    const results = await remote({
+      command: 'list',
+      args: opts,
+      opts: this.defaultOpts,
+      hub: server,
+    })
+    for await (const m of results) {
+      debug('posting', m)
+      await commands.post(m, this.defaultOpts)
+    }
   }
   async run(command, args) {
     debug('running', command, args)

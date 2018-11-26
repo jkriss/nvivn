@@ -12,23 +12,7 @@ const backwardsStream = require('fs-reverse')
 const through2 = require('through2')
 const sinceExtractor = require('../util/since')
 const fecha = require('fecha')
-
-const waitUntilReadable = stream => {
-  return new Promise((resolve, reject) => {
-    const cb = () => {
-      stream.removeListener('readable', cb)
-      stream.removeListener('end', cb)
-      resolve()
-    }
-    const errCb = err => {
-      stream.removeListener('error', errCb)
-      reject(err)
-    }
-    stream.on('error', errCb)
-    stream.on('readable', cb)
-    stream.on('end', cb)
-  })
-}
+const waitUntilReadable = require('../util/wait-until-readable')
 
 const getHashPath = hash => {
   return path.join(hash.slice(0, 2), hash)

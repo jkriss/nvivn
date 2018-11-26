@@ -7,6 +7,7 @@ const filter = (query, opts = {}) => {
   let f
   const q = Object.assign({}, query)
   debug('q:', q)
+  debug('opts:', opts)
   if (q.createdAfter || q.createdBefore) {
     q.t = {}
     if (q.createdAfter) {

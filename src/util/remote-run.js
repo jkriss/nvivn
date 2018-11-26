@@ -1,5 +1,31 @@
 const debug = require('debug')('nvivn:remote-run')
-const fetch = require('cross-fetch')
+const fetch = require('node-fetch')
+const ndjson = require('ndjson')
+const waitUntilReadable = require('./wait-until-readable')
+
+const generator = stream => {
+  return async function*() {
+    const readStream = ndjson.parse()
+    // console.log("reading from", stream)
+    stream.pipe(readStream)
+    let obj
+    do {
+      obj = readStream.read()
+      if (!obj) {
+        await waitUntilReadable(stream)
+        obj = readStream.read()
+      }
+      // debug("!!! got obj", obj)
+      if (obj) yield obj
+    } while (obj)
+  }
+}
+
+const streamToIterator = stream => {
+  return {
+    [Symbol.asyncIterator]: generator(stream),
+  }
+}
 
 const remoteRun = async (message, host, opts = {}) => {
   const res = await fetch(host, {
@@ -16,10 +42,13 @@ const remoteRun = async (message, host, opts = {}) => {
     } catch (err) {}
     throw new Error(`${body ? `${body.message}: ` : ''}${res.statusText}`)
   }
-  // TODO make an async iterator for the lines in the response
-  if (opts.stream) return res.body
+  // console.log("trying to read response:", res)
+  if (opts.iterator) return streamToIterator(res.body)
   const body = await res.text()
   return body
+    .trim()
+    .split('\n')
+    .map(JSON.parse)
 }
 
 module.exports = remoteRun

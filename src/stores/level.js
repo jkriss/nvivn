@@ -5,7 +5,7 @@ const awaitNext = (iterator, opts = {}) => {
   return new Promise((resolve, reject) => {
     iterator.next((err, key, val) => {
       if (err) return reject(err)
-      debug('next iterator value:', val)
+      // debug('next iterator value:', val)
       if (opts.returnValue === 'value') {
         resolve(val ? val.toString() : undefined)
       } else {
@@ -19,6 +19,8 @@ class LevelStore {
   constructor(opts = {}) {
     if (!opts.db)
       throw new Error('Must supply a db argument with a level instance')
+    debug('new level store with opts', opts)
+    this.publicKey = opts.publicKey
     this.db = opts.db
   }
   write(message) {
@@ -61,9 +63,10 @@ class LevelStore {
       limit = q.$limit
       delete q.$limit
     }
-    const f = q ? filter(q) : null
-    const iterator = this.db.iterator({ limit })
+    const f = q ? filter(q, { publicKey: this.publicKey }) : null
+    const iterator = this.db.iterator()
     let m = await awaitNext(iterator, { returnValue: 'value' })
+    let count = 0
     while (m) {
       m = JSON.parse(m)
       if (!f || (f && f(m))) {
@@ -71,6 +74,8 @@ class LevelStore {
           this.del(m.meta.hash)
         } else {
           yield m
+          count++
+          if (limit !== -1 && count >= limit) return
         }
       }
       m = await awaitNext(iterator, { returnValue: 'value' })

@@ -38,6 +38,7 @@ nvivn(undefined, { getPassphrase, messageStore })
         ? result
         : [result]
     for await (const r of iterableResult) {
+      debug('got iterated result', r)
       process.stdout.write(typeof r === 'string' ? r : JSON.stringify(r) + '\n')
     }
   })
