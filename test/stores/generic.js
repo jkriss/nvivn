@@ -77,32 +77,32 @@ module.exports = (name, createStore) => {
     t.equal(items, 1)
   })
 
-  // tap.test(`${name}: clear the store`, async function(t) {
-  //   const m1 = create('hi')
-  //   await store.write(m1)
-  //   const m1Exists = await store.exists(m1.meta.hash)
-  //   t.true(m1Exists)
-  //   await store.clear()
-  //   const m1StillExists = await store.exists(m1.meta.hash)
-  //   t.false(m1StillExists)
-  // })
-  //
-  // tap.test(`${name}: test iterator`, async function(t) {
-  //   const m1 = create('hi')
-  //   const m2 = create('hi again')
-  //   await store.clear()
-  //   await store.write(m1)
-  //   await store.write(m2)
-  //   let items = 0
-  //   const hashes = []
-  //   for await (const m of store) {
-  //     items++
-  //     hashes.push(m.meta.hash)
-  //   }
-  //   t.equal(items, 2)
-  //   t.same(hashes.sort(), [m1.meta.hash, m2.meta.hash].sort())
-  // })
-  //
+  tap.test(`${name}: clear the store`, async function(t) {
+    const m1 = create('hi')
+    await store.write(m1)
+    const m1Exists = await store.exists(m1.meta.hash)
+    t.true(m1Exists)
+    await store.clear()
+    const m1StillExists = await store.exists(m1.meta.hash)
+    t.false(m1StillExists)
+  })
+
+  tap.test(`${name}: test iterator`, async function(t) {
+    const m1 = create('hi')
+    const m2 = create('hi again')
+    await store.clear()
+    await store.write(m1)
+    await store.write(m2)
+    let items = 0
+    const hashes = []
+    for await (const m of store) {
+      items++
+      hashes.push(m.meta.hash)
+    }
+    t.equal(items, 2)
+    t.same(hashes.sort(), [m1.meta.hash, m2.meta.hash].sort())
+  })
+
   // tap.test(`${name}: test iterator, return newest first`, async function(t) {
   //   await store.clear()
   //   const hashes = []
@@ -117,57 +117,54 @@ module.exports = (name, createStore) => {
   //   }
   //   t.same(returnedHashes, hashes.reverse())
   // })
-  //
-  // tap.test(
-  //   `${name}: return null for an expired message`,
-  //   async function(t) {
-  //     const m = create({ body: 'hi', expr: 0 })
-  //     await store.write(m)
-  //     if (store.checkFrequency) await sleep(store.checkFrequency * 3)
-  //     const stored = await store.get(m.meta.hash)
-  //     t.notOk(stored, m)
-  //   }
-  // )
-  //
-  // tap.test(
-  //   `${name}: return null for an expired message from the iterator`,
-  //   async function(t) {
-  //     const m = create({ body: 'hi', expr: 0 })
-  //     await store.clear()
-  //     await store.write(m)
-  //     if (store.checkFrequency) await sleep(store.checkFrequency * 3)
-  //     let items = 0
-  //     const hashes = []
-  //     for await (const m of store) {
-  //       items++
-  //     }
-  //     t.equal(items, 0)
-  //   }
-  // )
-  //
-  // tap.test(`${name}: filter messages`, async function(t) {
-  //   const m1 = create('hi')
-  //   const m2 = create('hi again')
-  //   await store.clear()
-  //   await store.write(m1)
-  //   await store.write(m2)
-  //   let items = 0
-  //   for await (const m of store.filter({ body: 'hi' })) {
-  //     items++
-  //   }
-  //   t.equal(items, 1)
-  // })
-  //
-  // tap.test(`${name}: limit results`, async function(t) {
-  //   const m1 = create('hi')
-  //   const m2 = create('hi again')
-  //   await store.clear()
-  //   await store.write(m1)
-  //   await store.write(m2)
-  //   let items = 0
-  //   for await (const m of store.filter({ $limit: 1 })) {
-  //     items++
-  //   }
-  //   t.equal(items, 1)
-  // })
+
+  tap.test(`${name}: return null for an expired message`, async function(t) {
+    const m = create({ body: 'hi', expr: 0 })
+    await store.write(m)
+    if (store.checkFrequency) await sleep(store.checkFrequency * 3)
+    const stored = await store.get(m.meta.hash)
+    t.notOk(stored, m)
+  })
+
+  tap.test(
+    `${name}: return null for an expired message from the iterator`,
+    async function(t) {
+      const m = create({ body: 'hi', expr: 0 })
+      await store.clear()
+      await store.write(m)
+      if (store.checkFrequency) await sleep(store.checkFrequency * 3)
+      let items = 0
+      const hashes = []
+      for await (const m of store) {
+        items++
+      }
+      t.equal(items, 0)
+    }
+  )
+
+  tap.test(`${name}: filter messages`, async function(t) {
+    const m1 = create('hi')
+    const m2 = create('hi again')
+    await store.clear()
+    await store.write(m1)
+    await store.write(m2)
+    let items = 0
+    for await (const m of store.filter({ body: 'hi' })) {
+      items++
+    }
+    t.equal(items, 1)
+  })
+
+  tap.test(`${name}: limit results`, async function(t) {
+    const m1 = create('hi')
+    const m2 = create('hi again')
+    await store.clear()
+    await store.write(m1)
+    await store.write(m2)
+    let items = 0
+    for await (const m of store.filter({ $limit: 1 })) {
+      items++
+    }
+    t.equal(items, 1)
+  })
 }
