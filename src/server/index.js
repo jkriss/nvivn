@@ -50,6 +50,7 @@ const runCommand = async (command, args) => {
 const handler = async (req, res) => {
   if (req.method === 'OPTIONS') return send(res, 200)
   const requestUrl = url.parse(req.url)
+  if (requestUrl.pathname !== '/') return send(res, 404)
   // const path = requestUrl.pathname
   const opts = { messageStore, keys }
   let result
@@ -106,11 +107,9 @@ const handler = async (req, res) => {
       result[Symbol.asyncIterator] || result[Symbol.iterator]
         ? result
         : [result]
-    let count = 0
     for await (const r of iterableResult) {
       const str = typeof r === 'string' ? r : JSON.stringify(r)
       res.write(str + '\n')
-      count++
     }
   }
   res.end()
