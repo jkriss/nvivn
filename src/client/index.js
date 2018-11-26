@@ -38,14 +38,11 @@ class Client {
       messageStore,
     }
     ;['create', 'sign', 'post', 'list', 'del'].forEach(c => {
-      this[c] = (args, opts) => {
+      this[c] = (args = {}, opts = {}) => {
         if (this.server) {
           if (c === 'post') args = { message: args }
-          if (c === 'del')
-            args = Object.assign({ hash: args.hash, hard: args.hard })
-        } else {
-          if (c === 'del') args = { hash: args, hard: opts.hard }
         }
+        if (c === 'del') args = { hash: args.hash, hard: opts.hard }
         return this.run(c, args)
       }
     })

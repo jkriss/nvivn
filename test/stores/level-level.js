@@ -9,5 +9,8 @@ fs.ensureDir(testDataDB).then(() => {
   const db = level(testDataDB)
 
   const checkFrequency = 10
-  genericStoreTester(LevelStore, { db, checkFrequency })
+  genericStoreTester(
+    'Leveldb (file)',
+    () => new LevelStore({ db, checkFrequency })
+  )
 })

@@ -6,4 +6,8 @@ const memdown = require('memdown')
 const db = levelup(memdown())
 
 const checkFrequency = 10
-genericStoreTester(LevelStore, { db, checkFrequency })
+// genericStoreTester(LevelStore, { db, checkFrequency })
+genericStoreTester(
+  'Leveldb (memory)',
+  () => new LevelStore({ db, checkFrequency })
+)

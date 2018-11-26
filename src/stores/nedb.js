@@ -48,7 +48,7 @@ class NedbStore {
     return !!m
   }
   async clear() {
-    return this.remove({})
+    await this.remove({}, { multi: true })
   }
   async *messageGenerator(query) {
     const q = Object.assign({}, query)

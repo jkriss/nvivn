@@ -59,6 +59,7 @@ class MemoryStore {
   }
   [Symbol.iterator]() {
     return this.messages
+      .reverse()
       .filter(m => m.expr === undefined || m.expr > Date.now())
       [Symbol.iterator]()
   }

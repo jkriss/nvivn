@@ -164,7 +164,6 @@ class FileStore {
     await fs.remove(this.path)
   }
   async *messageGenerator(q, opts = {}) {
-    console.log('-- filtering ')
     let sinceCheck = () => true
     if (q && q.since) {
       sinceCheck = sinceExtractor({ since: q.since, publicKey: this.publicKey })
@@ -260,7 +259,7 @@ class FileStore {
   }
 
   [Symbol.asyncIterator]() {
-    return this.messageGenerator()
+    return this.messageGenerator(null, { backwards: true })
   }
 }
 

@@ -25,18 +25,22 @@ const importMessages = async (file, hub) => {
           body: obj,
         })
         if (hub) {
-          const signed = await sign(m, { keys })
-          const command = {
-            type: 'command',
-            command: 'post',
-            args: {
-              message: signed,
-            },
+          try {
+            const signed = await sign(m, { keys })
+            const command = {
+              type: 'command',
+              command: 'post',
+              args: {
+                message: signed,
+              },
+            }
+            const createdCommand = await create(command)
+            const signedCommand = await sign(createdCommand, { keys })
+            const posted = await remoteRun(signedCommand, hub)
+            console.log(JSON.stringify(posted))
+          } catch (err) {
+            throw err
           }
-          const createdCommand = await create(command)
-          const signedCommand = await sign(createdCommand, { keys })
-          const posted = await remoteRun(signedCommand, hub)
-          process.stdout.write(posted)
         } else {
           const posted = await post(m, { keys, messageStore })
           console.log(JSON.stringify(posted))
