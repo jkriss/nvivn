@@ -29,6 +29,7 @@
     "fs-reverse": "0.0.3",
     "get-stdin": "^6.0.0",
     "lockfile": "^1.0.4",
+    "lodash.sortby": "^4.7.0",
     "micro": "^9.3.3",
     "micro-cors": "^0.1.1",
     "mingo": "^2.2.4",

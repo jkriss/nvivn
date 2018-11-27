@@ -1,6 +1,8 @@
 const debug = require('debug')('nvivn:client')
 const { create, sign, list, del, post } = require('../index')
 const remoteRun = require('../util/remote-run')
+const sortBy = require('lodash.sortby')
+const MemSyncStore = require('./mem-sync-store')
 
 const commands = {
   remote,
@@ -32,7 +34,8 @@ async function remote({ command, args, hub, opts }) {
 }
 
 class Client {
-  constructor({ keys, messageStore }) {
+  constructor({ keys, messageStore, syncStore }) {
+    this.syncStore = syncStore || new MemSyncStore()
     this.defaultOpts = {
       keys,
       messageStore,
@@ -54,17 +57,26 @@ class Client {
     return this.defaultOpts.messageStore.clear()
   }
   async sync(server, opts = {}) {
-    debug('syncing with', server, 'with opts', opts)
+    const lastSync = await this.syncStore.get(server)
+    const start = Date.now()
+    const args = Object.assign(
+      { since: lastSync ? lastSync.latest : undefined },
+      opts
+    )
+    debug('syncing with', server, 'with args', args)
     const results = await remote({
       command: 'list',
-      args: opts,
+      args,
       opts: this.defaultOpts,
       hub: server,
     })
-    for await (const m of results) {
-      debug('posting', m)
+    // sort them oldest first, so newer stuff shows up first when listed
+    const sortedResults = sortBy(results, 't')
+    for await (const m of sortedResults) {
+      // debug('posting', m)
       await commands.post(m, this.defaultOpts)
     }
+    this.syncStore.put(server, { latest: start })
   }
   async run(command, args) {
     debug('running', command, args)

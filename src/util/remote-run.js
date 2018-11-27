@@ -45,6 +45,7 @@ const remoteRun = async (message, host, opts = {}) => {
   // console.log("trying to read response:", res)
   if (opts.iterator) return streamToIterator(res.body)
   const body = await res.text()
+  if (body.trim() === '') return []
   return body
     .trim()
     .split('\n')
