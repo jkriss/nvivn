@@ -1,6 +1,5 @@
 const debug = require('debug')('nvivn:client')
 const { create, sign, list, del, post } = require('../index')
-const remoteRun = require('../util/remote-run')
 const { encode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
@@ -23,16 +22,26 @@ const commands = {
   },
 }
 
-async function remote({ command, args, hub, opts }) {
-  debug(`generating command ${command} for remote hub`, hub)
+async function remote({ command, args, transport, opts }) {
+  debug(`generating command ${command} for remote transport`)
   const m = { command, type: 'command', args }
   // create and sign
   const fullMessage = await create(m, opts)
   const signedMessage = await sign(fullMessage, opts)
   debug('signed message:', signedMessage)
   // run against remote host
-  const result = await remoteRun(signedMessage, hub)
-  return result
+  // const result = await remoteRun(signedMessage, hub)
+  // return result
+  const req = transport.request(signedMessage)
+  return new Promise((resolve, reject) => {
+    // just buffer them all for now, can get fancy later
+    const results = []
+    req.on('data', d => results.push(d))
+    req.on('error', err => reject(err))
+    req.on('end', () => {
+      resolve(command === 'list' ? results : results[0])
+    })
+  })
 }
 
 class Client {
@@ -42,9 +51,9 @@ class Client {
       keys,
       messageStore,
     }
-    ;['create', 'sign', 'post', 'list', 'del'].forEach(c => {
+    ;['create', 'sign', 'post', 'list', 'del', 'info'].forEach(c => {
       this[c] = (args = {}, opts = {}) => {
-        if (this.server) {
+        if (this.transport) {
           if (c === 'post') args = { message: args }
         }
         if (c === 'del') args = { hash: args.hash, hard: opts.hard }
@@ -61,8 +70,9 @@ class Client {
   getPublicKey() {
     return this.defaultOpts.keys.publicKey
   }
-  setServer(server) {
-    this.server = server
+  setTransport(transport) {
+    debug('set transport to', transport)
+    this.transport = transport
   }
   clear() {
     return this.defaultOpts.messageStore.clear()
@@ -89,16 +99,19 @@ class Client {
     }
     this.syncStore.put(server, { latest: start })
   }
+  close() {
+    if (this.transport) this.transport.end()
+  }
   async run(command, args) {
     debug('running', command, args)
-    if (this.server) debug('remote server:', this.server)
+    if (this.transport) debug('remote transport:', this.transport)
     let result
-    if (this.server && ['post', 'list', 'del'].includes(command)) {
+    if (this.transport && ['post', 'list', 'del', 'info'].includes(command)) {
       result = await remote({
         command,
         args,
         opts: this.defaultOpts,
-        hub: this.server,
+        transport: this.transport,
       })
     } else {
       debug('running', command, 'with args', args, 'and opts', this.defaultOpts)
