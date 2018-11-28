@@ -1,6 +1,7 @@
 const debug = require('debug')('nvivn:client')
 const { create, sign, list, del, post } = require('../index')
 const remoteRun = require('../util/remote-run')
+const { encode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
 
@@ -10,6 +11,7 @@ const commands = {
   del: ({ hash, hard }, { messageStore }) => del(hash, { hard, messageStore }),
   sign,
   post,
+  info: (_, opts) => ({ publicKey: encode(opts.keys.publicKey) }),
   list: async (q, opts) => {
     const results = list(q, opts)
     if (typeof results === 'undefined') return []
@@ -49,6 +51,15 @@ class Client {
         return this.run(c, args)
       }
     })
+  }
+  async signCommand({ command, args }) {
+    const m = { command, type: 'command', args }
+    const fullMessage = await create(m, this.defaultOpts)
+    const signedMessage = await sign(fullMessage, this.defaultOpts)
+    return signedMessage
+  }
+  getPublicKey() {
+    return this.defaultOpts.keys.publicKey
   }
   setServer(server) {
     this.server = server

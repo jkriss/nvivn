@@ -6,11 +6,11 @@
   "main": "src/index.js",
   "bin": {
     "nvivn": "bin/nvivn.js",
-    "nvivn-server": "src/server/index.js"
+    "nvivn-server": "src/server/http.js"
   },
   "scripts": {
-    "start": "micro src/server/index.js",
-    "dev": "micro-dev src/server/index.js",
+    "start": "micro src/server/http.js",
+    "dev": "micro-dev src/server/http.js",
     "web:dev": "budo src/web/index.js -- -r fs:browserify-fs -t [ babelify --presets [ @babel/preset-env ] --plugins [ @babel/plugin-transform-runtime ] ]",
     "web:build": "browserify src/web/index.js -r fs:browserify-fs -t [ babelify --presets [ @babel/preset-env ] ] -o dist/bundle.js",
     "test": "faucet test/**/*.js test/*.js"
@@ -22,6 +22,7 @@
     "docopt": "^0.6.2",
     "dotenv": "^6.1.0",
     "es6-promisify": "^6.0.1",
+    "events": "^3.0.0",
     "fast-json-stable-stringify": "^2.0.0",
     "fecha": "^3.0.0",
     "fs-blob-store": "^5.2.1",
