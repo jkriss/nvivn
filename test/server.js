@@ -5,6 +5,8 @@ const Server = require('../src/server/core')
 const MemoryStore = require('../src/stores/memory')
 const MemorySyncStore = require('../src/client/mem-sync-store')
 const tcp = require('../src/server/tcp')
+const createHttpServer = require('../src/server/http')
+const createHttpClient = require('../src/client/http')
 const { encode } = require('../src/util/encoding')
 const fs = require('fs-extra')
 
@@ -74,5 +76,26 @@ tap.test(`run server over tcp`, async function(t) {
   } finally {
     client.close()
     tcpServer.close()
+  }
+})
+
+tap.test(`run server over http`, async function(t) {
+  const { server, client } = createServerClientPair()
+  const m = await client.signCommand({ command: 'info' })
+  const port = 9898
+  const httpServer = createHttpServer({ server })
+  await httpServer.listen(port)
+  try {
+    const httpClient = await createHttpClient({
+      url: `http://localhost:${port}`,
+    })
+    client.setTransport(httpClient)
+    t.ok(client.transport)
+    const serverInfo = await client.info()
+    t.ok(serverInfo)
+    t.equal(serverInfo.publicKey, encode(server.getPublicKey()))
+  } finally {
+    client.close()
+    httpServer.close()
   }
 })
