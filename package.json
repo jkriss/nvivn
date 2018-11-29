@@ -6,8 +6,8 @@
   "main": "src/index.js",
   "bin": {
     "nvivn": "bin/nvivn.js",
-    "nvivn-http": "src/server/standalone-http.js",
-    "nvivn-https": "src/server/secure.js"
+    "nvivn-http": "bin/nvivn-http.js",
+    "nvivn-https": "bin/nvivn-https.js"
   },
   "scripts": {
     "start": "micro src/server/http.js",

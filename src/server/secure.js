@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 const greenlock = require('greenlock-express')
 const setup = require('../util/setup')
 const createHttpServer = require('./http')
@@ -16,7 +15,7 @@ const create = async () => {
       process.env.NODE_ENV === 'staging'
         ? 'https://acme-staging-v02.api.letsencrypt.org/directory'
         : 'https://acme-v02.api.letsencrypt.org/directory',
-    configDir: '~/.nvivn/acme/',
+    configDir: '~/.nvivn-certs/acme/',
     app,
     debug: process.env.NODE_ENV === 'staging',
   }

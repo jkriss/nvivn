@@ -5,6 +5,7 @@ const fs = require('fs-extra')
 const path = require('path')
 const userHome = require('user-home')
 const { decode } = require('./encoding')
+const keys = require('./keys')
 
 const findInfo = async (filename = '.nvivn') => {
   const paths = ['.', userHome]
@@ -17,6 +18,15 @@ const findInfo = async (filename = '.nvivn') => {
 
 const loadInfo = async filename => {
   if (!filename) filename = await findInfo()
+  if (!filename) {
+    filename = '.nvivn'
+    const k = keys.generate()
+    const yamlConfig = yaml.safeDump({
+      keys: k,
+      messageStore: 'file:./messages',
+    })
+    await fs.writeFile(filename, `---\n${yamlConfig}---\n`)
+  }
   let config = {}
   try {
     const infoString = fs.readFileSync(filename, 'utf8')

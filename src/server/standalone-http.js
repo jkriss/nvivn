@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 const debug = require('debug')('nvivn:server:http')
 const micro = require('micro')
 const { send, json } = require('micro')
@@ -12,15 +11,13 @@ const createHandler = async () => {
   return createHttpServer({ server }).handler
 }
 
-module.exports = createHandler
-
-if (require.main === module) {
-  ;(async function() {
-    const handler = await createHandler()
-    const port = process.env.PORT || 3000
-    const server = micro(handler)
-    server.listen(port, () =>
-      console.log(`Listening at http://localhost:${port}`)
-    )
-  })()
+const run = async () => {
+  const handler = await createHandler()
+  const port = process.env.PORT || 3000
+  const server = micro(handler)
+  server.listen(port, () =>
+    console.log(`Listening at http://localhost:${port}`)
+  )
 }
+
+module.exports = run
