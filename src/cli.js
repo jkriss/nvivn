@@ -20,6 +20,7 @@ Usage:
   nvivn delete [options] <hash> [--hard]
   nvivn verify (--stdin | - | <message>)
   nvivn list [options] [--new] [<filter>...]
+  nvivn server [--port <port>] [--tcp] [--http] [--https] [--socket <socket>]
 Options:
   --type <type>   Type of signature
   --hub <hub>     Communicate with a remote hub.
@@ -44,6 +45,16 @@ const run = async (args, passedOpts) => {
   const opts = Object.assign({}, passedOpts)
   opts.keys = config.keys
   debug('args:', args)
+
+  if (args.server) {
+    if (args['<port>']) process.env.PORT = args['<port>']
+    if (args['<socket>']) process.env.SOCKET = args['<socket>']
+    if (args['--https']) require('./server/secure')
+    else if (args['--tcp']) require('./server/standalone-tcp')
+    else require('./server/standalone-http')
+    return []
+  }
+
   if (args['--hub']) {
     const command = Object.keys(args).find(
       a => a[0].match(/[a-z]/i) && args[a] === true

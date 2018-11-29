@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 require('dotenv').config()
 const debug = require('debug')('nvivn:server:standalone:tcp')
 const tcp = require('./tcp')

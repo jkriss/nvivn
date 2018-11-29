@@ -5,9 +5,7 @@
   "license": "MIT",
   "main": "src/index.js",
   "bin": {
-    "nvivn": "bin/nvivn.js",
-    "nvivn-http": "bin/nvivn-http.js",
-    "nvivn-https": "bin/nvivn-https.js"
+    "nvivn": "bin/nvivn.js"
   },
   "scripts": {
     "start": "micro src/server/http.js",
