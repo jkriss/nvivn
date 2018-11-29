@@ -1,6 +1,6 @@
 {
   "name": "@nvivn/core",
-  "version": "0.0.4",
+  "version": "0.0.6",
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
   "main": "src/index.js",
