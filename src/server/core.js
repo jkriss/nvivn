@@ -40,8 +40,8 @@ class Server {
   }
   handle(message) {
     const emitter = new EventEmitter()
-    const error = message => {
-      emitter.emit('error', { type: 'error', message })
+    const error = (message, statusCode) => {
+      emitter.emit('error', { type: 'error', message, statusCode })
       emitter.emit('end')
     }
     const _handle = async () => {
@@ -52,20 +52,22 @@ class Server {
         const verificationResult = await verify(message)
         // all signatures must pass for this to count
         const verified =
-          message.meta.signed && !verificationResult.find(v => v === false)
-        if (!verified) return send(res, 400, { message: 'signature not valid' })
+          message.meta &&
+          message.meta.signed &&
+          !verificationResult.find(v => v === false)
+        if (!verified) return error('signature not valid', 400)
         debug('verified command')
         const users = message.meta.signed.map(s => s.publicKey)
         // are the signatures recent enough?
         const times = message.meta.signed.map(s => s.t)
         const oldestSignatureTime = Math.min(...times)
         if (oldestSignatureTime < Date.now() - MAX_SIGNATURE_AGE) {
-          return error('signature is not recent enough')
+          return error('signature is not recent enough', 401)
         }
         // have we already processed this hash within the acceptable time frame?
         const recentlyRun = await this.getCache(message.meta.hash)
         if (recentlyRun) {
-          return error('command has already been run')
+          return error('command has already been run', 400)
         }
         debug('command run by', users)
         // const trueResults = users

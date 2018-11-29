@@ -17,13 +17,18 @@ const createServerTransport = (opts = {}) => {
     c.on('data', message => {
       debug('got message from client:', message)
       // oh. this needs to be per-client, or transaction, or session or something
-      const req = server.handle(JSON.parse(message))
-      req.on('data', d => c.write(JSON.stringify(d)))
-      req.on('error', err => c.write(JSON.stringify(err)))
-      req.on('end', () => {
-        debug('got end event, emitting empty line')
-        c.write('\n', () => debug('-- empty line written --'))
-      })
+      const handleErr = err => c.write(JSON.stringify(err) + '\n')
+      try {
+        const req = server.handle(JSON.parse(message))
+        req.on('data', d => c.write(JSON.stringify(d) + '\n'))
+        req.on('error', handleErr)
+        req.on('end', () => {
+          debug('got end event, emitting empty line')
+          c.write('\n', () => debug('-- empty line written --'))
+        })
+      } catch (err) {
+        handleErr({ type: 'error', message: 'invalid input', statusCode: 400 })
+      }
     })
     // c.write('hello\r\n')
     // c.pipe(c)

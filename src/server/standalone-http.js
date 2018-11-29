@@ -10,6 +10,7 @@ const { encode } = require('../util/encoding')
 const Client = require('../client/index')
 const Server = require('./core')
 const MemorySyncStore = require('../client/mem-sync-store')
+const loadInfo = require('../util/info')
 
 const cors = require('micro-cors')()
 const keys = loadKeys()
@@ -17,7 +18,8 @@ const publicKey = encode(keys.publicKey)
 const trustedKeys = (process.env.NVIVN_TRUSTED_KEYS || '').trim().split(/\s+/)
 const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
 const syncStore = new MemorySyncStore()
-const client = new Client({ messageStore, keys, syncStore })
+const info = loadInfo()
+const client = new Client({ messageStore, keys, syncStore, info })
 const server = new Server({ client, trustedKeys })
 
 const handler = async (req, res) => {

@@ -10,7 +10,8 @@ const commands = {
   del: ({ hash, hard }, { messageStore }) => del(hash, { hard, messageStore }),
   sign,
   post,
-  info: (_, opts) => ({ publicKey: encode(opts.keys.publicKey) }),
+  info: (_, opts) =>
+    Object.assign({ publicKey: encode(opts.keys.publicKey) }, opts.info),
   list: async (q, opts) => {
     const results = list(q, opts)
     if (typeof results === 'undefined') return []
@@ -45,11 +46,12 @@ async function remote({ command, args, transport, opts }) {
 }
 
 class Client {
-  constructor({ keys, messageStore, syncStore }) {
+  constructor({ keys, messageStore, syncStore, info }) {
     this.syncStore = syncStore || new MemSyncStore()
     this.defaultOpts = {
       keys,
       messageStore,
+      info,
     }
     ;['create', 'sign', 'post', 'list', 'del', 'info'].forEach(c => {
       this[c] = (args = {}, opts = {}) => {
