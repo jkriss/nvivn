@@ -40,6 +40,7 @@ const createServerTransport = (opts = {}) => {
     })
   }
   return {
+    handler,
     listen,
     close,
   }
