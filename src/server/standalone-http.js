@@ -22,6 +22,8 @@ const info = loadInfo()
 const client = new Client({ messageStore, keys, syncStore, info })
 const server = new Server({ client, trustedKeys })
 
+if (info.greeting) console.log(info.greeting)
+
 const handler = async (req, res) => {
   if (req.method === 'OPTIONS') return send(res, 200)
   const requestUrl = url.parse(req.url)

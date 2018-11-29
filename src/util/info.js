@@ -1,5 +1,6 @@
 const yaml = require('js-yaml')
 const fm = require('front-matter')
+const fs = require('fs')
 
 module.exports = () => {
   let info = {}
@@ -17,6 +18,8 @@ module.exports = () => {
         greeting: frontMattered.body,
       })
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error(err)
+  }
   return info
 }
