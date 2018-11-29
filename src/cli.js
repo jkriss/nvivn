@@ -54,7 +54,7 @@ const run = async (args, passedOpts) => {
       const q = oyaml.parse(args['<filter>'].join(' '), { unflatten: false })
       m.args = q
     } else if (command === 'post') {
-      m.args = { message: args['<message>'] }
+      m.args = args['<message>']
     } else if (command === 'delete') {
       m.args = { hash: args['<hash>'], hard: args['--hard'] }
     }

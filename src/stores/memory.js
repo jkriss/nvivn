@@ -35,7 +35,7 @@ class MemoryStore {
     this.messages = []
     this.hashes = {}
   }
-  *filteredGenerator(q) {
+  *filteredGenerator(q = {}) {
     let limit
     if (q.$limit) {
       limit = q.$limit

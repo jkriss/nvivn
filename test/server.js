@@ -10,9 +10,9 @@ const fs = require('fs-extra')
 
 const createClient = ({ keys } = {}) => {
   if (!keys) keys = signatures.keyPair()
-  const store = new MemoryStore({ publicKey: keys.publicKey })
+  const messageStore = new MemoryStore({ publicKey: keys.publicKey })
   const syncStore = new MemorySyncStore()
-  return new Client({ store, keys, syncStore })
+  return new Client({ messageStore, keys, syncStore })
 }
 
 const createServer = (opts = {}) => {
