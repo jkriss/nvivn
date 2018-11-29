@@ -3,7 +3,7 @@ const { docopt } = require('docopt')
 const getStdin = require('get-stdin')
 const { create, post, sign, verify, del, list } = require('./index')
 const keys = require('./util/keys')
-const loadKeys = require('./util/load-keys')
+const loadConfig = require('./util/config')
 const generateId = require('./util/passphrase-ids')
 const oyaml = require('oyaml')
 const remoteRun = require('./util/remote-run')
@@ -39,9 +39,10 @@ const parse = async (docOpts = {}) => {
 }
 
 const run = async (args, passedOpts) => {
+  const config = await loadConfig()
   let result
   const opts = Object.assign({}, passedOpts)
-  opts.keys = loadKeys()
+  opts.keys = config.keys
   debug('args:', args)
   if (args['--hub']) {
     const command = Object.keys(args).find(

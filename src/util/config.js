@@ -1,8 +1,10 @@
+require('dotenv').config()
 const yaml = require('js-yaml')
 const fm = require('front-matter')
 const fs = require('fs-extra')
 const path = require('path')
 const userHome = require('user-home')
+const { decode } = require('./encoding')
 
 const findInfo = async (filename = '.nvivn') => {
   const paths = ['.', userHome]
@@ -32,6 +34,13 @@ const loadInfo = async filename => {
     }
   } catch (err) {
     console.error(err)
+  }
+  if (!config.keys) {
+    config.keys = {}
+    if (process.env.NVIVN_PUBLIC_KEY)
+      config.keys.publicKey = decode(process.env.NVIVN_PUBLIC_KEY)
+    if (process.env.NVIVN_SECRET_KEY)
+      config.keys.secretKey = decode(process.env.NVIVN_SECRET_KEY)
   }
   return config
 }

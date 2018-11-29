@@ -1,30 +1,13 @@
 #!/usr/bin/env node
 require('dotenv').config()
 const debug = require('debug')('nvivn:server:standalone:tcp')
-const loadKeys = require('../util/load-keys')
-const getStore = require('../util/store-connection')
-const { encode } = require('../util/encoding')
-const Client = require('../client/index')
-const Server = require('./core')
-const MemorySyncStore = require('../client/mem-sync-store')
 const tcp = require('./tcp')
-const loadConfig = require('../util/config')
+const setup = require('../util/setup')
 
 const run = async () => {
-  const config = await loadConfig()
+  const { config, client, server } = await setup()
   if (config.info && config.info.greeting) console.log(config.info.greeting)
-  const keys = loadKeys()
-  const publicKey = encode(keys.publicKey)
-  const trustedKeys = (process.env.NVIVN_TRUSTED_KEYS || '').trim().split(/\s+/)
-  const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
-  const syncStore = new MemorySyncStore()
-  const client = new Client({
-    messageStore,
-    keys,
-    syncStore,
-    info: config.info,
-  })
-  const server = new Server({ client, trustedKeys })
+
   const port = process.env.PORT || 4444
   const socket = process.env.SOCKET
 
