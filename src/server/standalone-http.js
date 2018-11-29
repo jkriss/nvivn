@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-require('dotenv').config()
 const debug = require('debug')('nvivn:server:http')
 const micro = require('micro')
 const { send, json } = require('micro')

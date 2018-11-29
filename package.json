@@ -6,7 +6,8 @@
   "main": "src/index.js",
   "bin": {
     "nvivn": "bin/nvivn.js",
-    "nvivn-server": "src/server/standalone-http.js"
+    "nvivn-http": "src/server/standalone-http.js",
+    "nvivn-https": "src/server/secure.js"
   },
   "scripts": {
     "start": "micro src/server/http.js",
@@ -31,6 +32,7 @@
     "fs-extra": "^7.0.1",
     "fs-reverse": "0.0.3",
     "get-stdin": "^6.0.0",
+    "greenlock-express": "^2.4.10",
     "js-yaml": "^3.12.0",
     "lockfile": "^1.0.4",
     "lodash.sortby": "^4.7.0",
