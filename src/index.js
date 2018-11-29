@@ -4,6 +4,7 @@ const sign = require('./commands/sign')
 const verify = require('./commands/verify')
 const del = require('./commands/delete')
 const list = require('./commands/list')
+const info = require('./commands/info')
 
 module.exports = {
   create,
@@ -12,4 +13,5 @@ module.exports = {
   verify,
   del,
   list,
+  info,
 }

@@ -1,5 +1,5 @@
 const debug = require('debug')('nvivn:client')
-const { create, sign, list, del, post } = require('../index')
+const { create, sign, list, del, post, info } = require('../index')
 const { encode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
@@ -11,14 +11,7 @@ const commands = {
   del: ({ hash, hard }, { messageStore }) => del(hash, { hard, messageStore }),
   sign,
   post,
-  info: async (_, opts = {}) => {
-    const data = Object.assign(
-      { publicKey: encode(opts.keys.publicKey) },
-      opts.info
-    )
-    const m = await create(data)
-    return sign(m, opts)
-  },
+  info,
   list: async (q, opts) => {
     const results = list(q, opts)
     if (typeof results === 'undefined') return []

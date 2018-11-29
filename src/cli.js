@@ -1,7 +1,7 @@
 const debug = require('debug')('nvivn:cli')
 const { docopt } = require('docopt')
 const getStdin = require('get-stdin')
-const { create, post, sign, verify, del, list } = require('./index')
+const { create, post, sign, verify, del, list, info } = require('./index')
 const keys = require('./util/keys')
 const loadConfig = require('./util/config')
 const generateId = require('./util/passphrase-ids')
@@ -21,6 +21,7 @@ Usage:
   nvivn verify (--stdin | - | <message>)
   nvivn list [options] [--new] [<filter>...]
   nvivn server [--port <port>] [--tcp] [--http] [--https] [--socket <socket>]
+  nvivn info [options]
 Options:
   --type <type>   Type of signature
   --hub <hub>     Communicate with a remote hub.
@@ -44,6 +45,7 @@ const run = async (args, passedOpts) => {
   let result
   const opts = Object.assign({}, passedOpts)
   opts.keys = config.keys
+  opts.info = config.info
   debug('args:', args)
 
   if (args.server) {
@@ -116,6 +118,9 @@ const run = async (args, passedOpts) => {
       args['<hash>'],
       Object.assign({}, opts, { hard: !!args['--hard'] })
     )
+  } else if (args.info) {
+    debug('returning info')
+    result = await info(null, opts)
   }
   return result
 }
