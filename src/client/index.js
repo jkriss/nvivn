@@ -10,8 +10,14 @@ const commands = {
   del: ({ hash, hard }, { messageStore }) => del(hash, { hard, messageStore }),
   sign,
   post,
-  info: (_, opts) =>
-    Object.assign({ publicKey: encode(opts.keys.publicKey) }, opts.info),
+  info: async (_, opts = {}) => {
+    const data = Object.assign(
+      { publicKey: encode(opts.keys.publicKey) },
+      opts.info
+    )
+    const m = await create(data)
+    return sign(m, opts)
+  },
   list: async (q, opts) => {
     const results = list(q, opts)
     if (typeof results === 'undefined') return []
