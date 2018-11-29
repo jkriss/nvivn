@@ -48,10 +48,12 @@ const loadInfo = async filename => {
   if (!config.keys) {
     config.keys = {}
     if (process.env.NVIVN_PUBLIC_KEY)
-      config.keys.publicKey = decode(process.env.NVIVN_PUBLIC_KEY)
+      config.keys.publicKey = process.env.NVIVN_PUBLIC_KEY
     if (process.env.NVIVN_SECRET_KEY)
-      config.keys.secretKey = decode(process.env.NVIVN_SECRET_KEY)
+      config.keys.secretKey = process.env.NVIVN_SECRET_KEY
   }
+  config.keys.publicKey = decode(config.keys.publicKey)
+  config.keys.secretKey = decode(config.keys.secretKey)
   return config
 }
 
