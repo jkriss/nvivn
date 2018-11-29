@@ -3,6 +3,7 @@ const { create, sign, list, del, post } = require('../index')
 const { encode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
+const createHttpClient = require('./http')
 
 const commands = {
   remote,
@@ -93,11 +94,15 @@ class Client {
       opts
     )
     debug('syncing with', server, 'with args', args)
+    // TODO make this an option so we can sync with other server types
+    const transport = await createHttpClient({
+      url: server,
+    })
     const results = await remote({
       command: 'list',
       args,
       opts: this.defaultOpts,
-      hub: server,
+      transport,
     })
     // sort them oldest first, so newer stuff shows up first when listed
     const sortedResults = sortBy(results, 't')

@@ -20,7 +20,8 @@ const createClientTransport = (opts = {}) => {
         }
       })
       .then(result => {
-        const lines = result.trim().split('\n')
+        const trimmed = result.trim()
+        const lines = trimmed === '' ? [] : trimmed.split('\n')
         for (const line of lines) {
           emitter.emit('data', JSON.parse(line))
         }
