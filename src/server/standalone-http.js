@@ -10,47 +10,58 @@ const { encode } = require('../util/encoding')
 const Client = require('../client/index')
 const Server = require('./core')
 const MemorySyncStore = require('../client/mem-sync-store')
-const loadInfo = require('../util/info')
+const loadConfig = require('../util/config')
 
-const cors = require('micro-cors')()
-const keys = loadKeys()
-const publicKey = encode(keys.publicKey)
-const trustedKeys = (process.env.NVIVN_TRUSTED_KEYS || '').trim().split(/\s+/)
-const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
-const syncStore = new MemorySyncStore()
-const info = loadInfo()
-const client = new Client({ messageStore, keys, syncStore, info })
-const server = new Server({ client, trustedKeys })
-
-if (info.greeting) console.log(info.greeting)
-
-const handler = async (req, res) => {
-  if (req.method === 'OPTIONS') return send(res, 200)
-  const requestUrl = url.parse(req.url)
-  if (req.method !== 'POST' || requestUrl.pathname !== '/')
-    return send(res, 404)
-
-  const message = await json(req)
-  const r = server.handle(message)
-  r.on('data', d => res.write(JSON.stringify(d) + '\n'))
-  r.on('end', () => {
-    res.statusCode = 200
-    res.end()
+const createHandler = async () => {
+  const cors = require('micro-cors')()
+  const keys = loadKeys()
+  const publicKey = encode(keys.publicKey)
+  const trustedKeys = (process.env.NVIVN_TRUSTED_KEYS || '').trim().split(/\s+/)
+  const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
+  const syncStore = new MemorySyncStore()
+  const config = await loadConfig()
+  const client = new Client({
+    messageStore,
+    keys,
+    syncStore,
+    info: config.info,
   })
-  r.on('error', err => {
-    // TODO add http status code equivalents to error messages, and pass them through
-    res.statusCode = err.statusCode || 500
-    res.write(JSON.stringify(err))
-    res.end()
-  })
+  const server = new Server({ client, trustedKeys })
+
+  if (config.info && config.info.greeting) console.log(config.info.greeting)
+
+  const handler = async (req, res) => {
+    if (req.method === 'OPTIONS') return send(res, 200)
+    const requestUrl = url.parse(req.url)
+    if (req.method !== 'POST' || requestUrl.pathname !== '/')
+      return send(res, 404)
+
+    const message = await json(req)
+    const r = server.handle(message)
+    r.on('data', d => res.write(JSON.stringify(d) + '\n'))
+    r.on('end', () => {
+      res.statusCode = 200
+      res.end()
+    })
+    r.on('error', err => {
+      // TODO add http status code equivalents to error messages, and pass them through
+      res.statusCode = err.statusCode || 500
+      res.write(JSON.stringify(err))
+      res.end()
+    })
+  }
+  return cors(handler)
 }
 
-module.exports = cors(handler)
+module.exports = createHandler
 
 if (require.main === module) {
-  const port = process.env.PORT || 3000
-  const server = micro(module.exports)
-  server.listen(port, () =>
-    console.log(`Listening at http://localhost:${port}`)
-  )
+  ;(async function() {
+    const handler = await createHandler()
+    const port = process.env.PORT || 3000
+    const server = micro(module.exports)
+    server.listen(port, () =>
+      console.log(`Listening at http://localhost:${port}`)
+    )
+  })()
 }

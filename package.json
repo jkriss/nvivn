@@ -48,6 +48,7 @@
     "sodium-signatures": "^2.1.1",
     "subleveldown": "^3.0.1",
     "tmp": "0.0.33",
+    "user-home": "^2.0.0",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {

@@ -8,17 +8,22 @@ const Client = require('../client/index')
 const Server = require('./core')
 const MemorySyncStore = require('../client/mem-sync-store')
 const tcp = require('./tcp')
-const loadInfo = require('../util/info')
+const loadConfig = require('../util/config')
 
 const run = async () => {
-  const info = loadInfo()
-  if (info.greeting) console.log(info.greeting)
+  const config = await loadConfig()
+  if (config.info && config.info.greeting) console.log(config.info.greeting)
   const keys = loadKeys()
   const publicKey = encode(keys.publicKey)
   const trustedKeys = (process.env.NVIVN_TRUSTED_KEYS || '').trim().split(/\s+/)
   const messageStore = getStore(process.env.NVIVN_MESSAGE_STORE, { publicKey })
   const syncStore = new MemorySyncStore()
-  const client = new Client({ messageStore, keys, syncStore, info })
+  const client = new Client({
+    messageStore,
+    keys,
+    syncStore,
+    info: config.info,
+  })
   const server = new Server({ client, trustedKeys })
   const port = process.env.PORT || 4444
   const socket = process.env.SOCKET
