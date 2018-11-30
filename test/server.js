@@ -188,4 +188,40 @@ tap.test(`sync both ways`, async function(t) {
   t.equal(otherClient.defaultOpts.messageStore.messages.length, 5)
 })
 
+tap.test(`sync both ways over http by url`, async function(t) {
+  const server = createServer()
+  const client = server.client
+  const otherClient = createClient()
+  const port = 9898
+  const httpServer = createHttpServer({ server })
+  await httpServer.listen(port)
+  server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+  for (let i = 0; i < 2; i++) {
+    const posted = await client
+      .create({ body: `hi ${i + 1}` })
+      .then(client.sign)
+      .then(client.post)
+  }
+  for (let i = 0; i < 3; i++) {
+    const posted = await otherClient
+      .create({ body: `hi ${i + 1}` })
+      .then(otherClient.sign)
+      .then(otherClient.post)
+  }
+  try {
+    const { push, pull } = await otherClient.sync({
+      url: 'http://localhost:9898',
+    })
+    console.log('push result:', push)
+    console.log('pull result:', pull)
+    t.equal(push.count, 3)
+    // the pull includes the ones that were just pushed, but hashes won't be overwritten
+    t.equal(pull.count, 2)
+    t.equal(client.defaultOpts.messageStore.messages.length, 5)
+    t.equal(otherClient.defaultOpts.messageStore.messages.length, 5)
+  } finally {
+    httpServer.close()
+  }
+})
+
 // TODO sync a delete even if the hash has been seen already

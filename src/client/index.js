@@ -120,7 +120,7 @@ class Client {
     }
     await this.syncStore.put(serverKey, start)
     debug('pulled', count, serverKey)
-    return { count }
+    return Object.assign({ count }, without(serverInfo, 'transport'))
   }
   async resolveServerInfo({ publicKey, url }) {
     if (!publicKey && !url) throw new Error('Must provide publicKey or url')
@@ -192,7 +192,10 @@ class Client {
     }
     await this.syncStore.put(serverKey, start)
     debug('pushed', messages.length, serverKey)
-    return { count: messages.length }
+    return Object.assign(
+      { count: messages.length },
+      without(serverInfo, 'transport')
+    )
   }
   async sync(server, opts = {}) {
     if (!server) {
