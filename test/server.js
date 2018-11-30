@@ -145,6 +145,7 @@ tap.test(`push to a server`, async function(t) {
   const transport = createInProcessTransport({ server })
   let syncResult = await otherClient.push('test server', { transport })
   t.equal(syncResult.count, 5)
+  t.equal(client.defaultOpts.messageStore.messages.length, 5)
   const newMessages = await client.list()
   t.equal(newMessages.length, 5)
 })

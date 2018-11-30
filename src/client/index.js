@@ -1,5 +1,5 @@
 const debug = require('debug')('nvivn:client')
-const { create, sign, list, del, post, info } = require('../index')
+const { create, sign, list, del, post, postMany, info } = require('../index')
 const { encode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
@@ -12,6 +12,7 @@ const commands = {
   del: ({ hash, hard }, { messageStore }) => del(hash, { hard, messageStore }),
   sign,
   post,
+  postMany,
   info,
   list: async (q, opts) => {
     const results = list(q, opts)
@@ -47,22 +48,25 @@ async function remote({ command, args, transport, opts }) {
 }
 
 class Client {
-  constructor({ keys, messageStore, syncStore, info }) {
+  constructor({ keys, messageStore, syncStore, info, peers }) {
     this.syncStore = syncStore || new MemSyncStore()
+    this.peers = peers || []
     this.defaultOpts = {
       keys,
       messageStore,
       info,
     }
-    ;['create', 'sign', 'post', 'list', 'del', 'info'].forEach(c => {
-      this[c] = (args = {}, opts = {}) => {
-        if (this.transport) {
-          if (c === 'post') args = { message: args }
+    ;['create', 'sign', 'post', 'postMany', 'list', 'del', 'info'].forEach(
+      c => {
+        this[c] = (args = {}, opts = {}) => {
+          if (this.transport) {
+            if (c === 'post') args = { message: args }
+          }
+          if (c === 'del') args = { hash: args.hash, hard: opts.hard }
+          return this.run(c, args)
         }
-        if (c === 'del') args = { hash: args.hash, hard: opts.hard }
-        return this.run(c, args)
       }
-    })
+    )
   }
   async signCommand({ command, args }) {
     const m = { command, type: 'command', args }
@@ -116,34 +120,46 @@ class Client {
     const serverKey = `${server}:push`
     const lastPush = await this.syncStore.get(serverKey)
     const start = opts.start || Date.now()
-    // do stuff
     const results = await this.list({ since: lastPush })
-    let count = 0
     const transport =
       opts.transport ||
       (await createHttpClient({
         url: server,
       }))
+    const messages = []
+    // const writes = []
     for await (const m of results) {
-      count++
-      await remote({
-        command: 'post',
-        args: m,
-        opts: this.defaultOpts,
-        transport,
-      })
+      messages.push(m)
+    }
+    debug('posting', messages.length, 'messages')
+    if (messages.length > 0) {
+      // do this in chunks so it doesn't get out of hand
+      const chunk = 1000
+      for (let i = 0, j = messages.length; i < j; i += chunk) {
+        const someMessages = messages.slice(i, i + chunk)
+        await remote({
+          command: 'postMany',
+          args: { messages: someMessages },
+          opts: this.defaultOpts,
+          transport,
+        })
+      }
     }
     await this.syncStore.put(serverKey, start)
-    debug('pushed', count)
-    return { count }
+    debug('pushed', messages.length)
+    return { count: messages.length }
   }
   async sync(server, opts = {}) {
+    if (!server) {
+      return Promise.all(this.peers.map(p => this.sync(p, opts)))
+    }
     const push = await this.push(server, opts)
     // as of now, this will also return the ones that just got pushed
     const pull = await this.pull(server, opts)
     return {
       push,
       pull,
+      server,
     }
   }
   close() {
@@ -153,7 +169,10 @@ class Client {
     debug('running', command, args)
     if (this.transport) debug('remote transport:', this.transport)
     let result
-    if (this.transport && ['post', 'list', 'del', 'info'].includes(command)) {
+    if (
+      this.transport &&
+      ['post', 'postMany', 'list', 'del', 'info'].includes(command)
+    ) {
       result = await remote({
         command,
         args,

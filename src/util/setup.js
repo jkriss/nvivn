@@ -26,6 +26,7 @@ const createClientServer = async (config, clientOpts = {}) => {
       messageStore,
       keys,
       syncStore,
+      peers: config.peers || [],
       info: config.info,
     },
     clientOpts

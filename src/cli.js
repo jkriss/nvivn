@@ -23,7 +23,7 @@ Usage:
   nvivn list [options] [--new] [<filter>...]
   nvivn server [--port <port>] [--tcp] [--http] [--https] [--socket <socket>]
   nvivn info [options]
-  nvivn sync <hub>
+  nvivn sync [<hub>]
   nvivn push <hub>
   nvivn pull <hub>
 Options:

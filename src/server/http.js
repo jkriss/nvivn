@@ -14,7 +14,7 @@ const createServerTransport = (opts = {}) => {
     if (req.method !== 'POST' || requestUrl.pathname !== '/')
       return send(res, 404)
 
-    const message = await json(req)
+    const message = await json(req, { limit: '10mb' })
     const r = server.handle(message)
     res.setHeader('Content-Type', 'application/json')
     r.on('data', d => res.write(JSON.stringify(d) + '\n'))
