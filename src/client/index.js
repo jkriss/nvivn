@@ -80,14 +80,12 @@ class Client {
   clear() {
     return this.defaultOpts.messageStore.clear()
   }
-  async sync(server, opts = {}) {
-    const lastSync = await this.syncStore.get(server)
+  async pull(server, opts = {}) {
+    const serverKey = `${server}:pull`
+    const lastPull = await this.syncStore.get(serverKey)
     const start = Date.now()
-    const args = Object.assign(
-      { since: lastSync ? lastSync.latest : undefined },
-      opts
-    )
-    debug('syncing with', server, 'with args', args)
+    const args = Object.assign({ since: lastPull }, opts)
+    debug('pulling from', server, 'with args', args)
     // TODO make this an option so we can sync with other server types
     const transport =
       opts.transport ||
@@ -108,8 +106,41 @@ class Client {
       await commands.post(m, this.defaultOpts)
       count++
     }
-    this.syncStore.put(server, { latest: start })
+    this.syncStore.put(serverKey, start)
     return { count }
+  }
+  async push(server, opts = {}) {
+    const serverKey = `${server}:push`
+    const lastPush = await this.syncStore.get(serverKey)
+    const start = Date.now()
+    // do stuff
+    const results = await this.list({ since: lastPush })
+    let count = 0
+    const transport =
+      opts.transport ||
+      (await createHttpClient({
+        url: server,
+      }))
+    for await (const m of results) {
+      count++
+      await remote({
+        command: 'post',
+        args: m,
+        opts: this.defaultOpts,
+        transport,
+      })
+    }
+    this.syncStore.put(serverKey, start)
+    return { count }
+  }
+  async sync(server, opts = {}) {
+    const push = await this.push(server, opts)
+    // as of now, this will also return the ones that just got pushed
+    const pull = await this.pull(server, opts)
+    return {
+      push,
+      pull,
+    }
   }
   close() {
     if (this.transport) this.transport.end()
