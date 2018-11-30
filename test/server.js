@@ -7,6 +7,7 @@ const MemorySyncStore = require('../src/client/mem-sync-store')
 const tcp = require('../src/server/tcp')
 const createHttpServer = require('../src/server/http')
 const createHttpClient = require('../src/client/http')
+const createInProcessTransport = require('../src/server/in-process')
 const { encode } = require('../src/util/encoding')
 const fs = require('fs-extra')
 
@@ -18,6 +19,7 @@ const createClient = ({ keys } = {}) => {
 }
 
 const createServer = (opts = {}) => {
+  if (!opts.keys) opts.keys = signatures.keyPair()
   const client = createClient({ keys: opts.keys })
   return new Server(Object.assign({ client }, opts))
 }
@@ -98,4 +100,30 @@ tap.test(`run server over http`, async function(t) {
     client.close()
     httpServer.close()
   }
+})
+
+tap.test(`sync from a server`, async function(t) {
+  const server = createServer()
+  const client = server.client
+  const otherClient = createClient()
+  server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+  for (let i = 0; i < 5; i++) {
+    const posted = await client
+      .create({ body: `hi ${i + 1}` })
+      .then(client.sign)
+      .then(client.post)
+  }
+  t.equal(client.defaultOpts.messageStore.messages.length, 5)
+  const postedMessages = await client.list()
+  t.equal(postedMessages.length, 5)
+  const originalMessages = await otherClient.list()
+  t.same(originalMessages, [])
+  const transport = createInProcessTransport({ server })
+  let syncResult = await otherClient.sync('test server', { transport })
+  const newMessages = await otherClient.list()
+  t.equal(newMessages.length, 5)
+  t.equal(syncResult.count, 5)
+  // now should only request newer messages
+  syncResult = await otherClient.sync('test server', { transport })
+  t.equal(syncResult.count, 0)
 })

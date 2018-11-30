@@ -90,6 +90,7 @@ class Server {
         } else {
           this.setCache(message.meta.hash, true)
           result = await this.client.run(message.command, message.args)
+          debug('got result', result)
         }
       } else {
         return error(

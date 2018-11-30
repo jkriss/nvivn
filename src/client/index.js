@@ -4,6 +4,7 @@ const { encode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
 const createHttpClient = require('./http')
+const without = require('../util/without')
 
 const commands = {
   remote,
@@ -24,8 +25,8 @@ const commands = {
 }
 
 async function remote({ command, args, transport, opts }) {
-  debug(`generating command ${command} for remote transport`)
-  const m = { command, type: 'command', args }
+  debug(`generating command ${command} for remote transport with args`, args)
+  const m = { command, type: 'command', args: without(args, 'transport') }
   // create and sign
   const fullMessage = await create(m, opts)
   const signedMessage = await sign(fullMessage, opts)
@@ -88,9 +89,11 @@ class Client {
     )
     debug('syncing with', server, 'with args', args)
     // TODO make this an option so we can sync with other server types
-    const transport = await createHttpClient({
-      url: server,
-    })
+    const transport =
+      opts.transport ||
+      (await createHttpClient({
+        url: server,
+      }))
     const results = await remote({
       command: 'list',
       args,
@@ -99,11 +102,14 @@ class Client {
     })
     // sort them oldest first, so newer stuff shows up first when listed
     const sortedResults = sortBy(results, 't')
+    let count = 0
     for await (const m of sortedResults) {
       // debug('posting', m)
       await commands.post(m, this.defaultOpts)
+      count++
     }
     this.syncStore.put(server, { latest: start })
+    return { count }
   }
   close() {
     if (this.transport) this.transport.end()
@@ -120,7 +126,7 @@ class Client {
         transport: this.transport,
       })
     } else {
-      debug('running', command, 'with args', args, 'and opts', this.defaultOpts)
+      debug('running', command, 'with args', args)
       result = await commands[command](args, this.defaultOpts)
     }
     return result
