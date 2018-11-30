@@ -161,12 +161,17 @@ class Client {
     for await (const m of results) {
       // if it's a delete that's happened since the last sync, send it
       // otherwise, only send it if it hasn't already been routed by this
-      // need to verify the routing signature so people can't keep messages from being routed this way
+
       const alreadySeen = m.meta.signed.find(
         s => s.publicKey === serverInfo.publicKey
       )
-      const deletionMessage = m.meta.signed.find(s => s.type === 'deletion')
-      const sendMessage = !alreadySeen && !deletionMessage
+      // TODO need to verify the routing signature so people can't keep messages from being routed this way
+      // actually, these should be verified on their way in
+
+      const recentDeletionMessage = m.meta.signed.find(
+        s => s.type === 'deletion' && s.t > start
+      )
+      const sendMessage = !alreadySeen && !recentDeletionMessage
       // console.log(`message ${m.meta.hash} seen by ${serverInfo.publicKey}? ${alreadySeen}`)
       // console.log("  ", m.meta.signed)
       if (sendMessage) messages.push(m)
