@@ -7,6 +7,7 @@ const loadConfig = require('./util/config')
 const generateId = require('./util/passphrase-ids')
 const oyaml = require('oyaml')
 const remoteRun = require('./util/remote-run')
+const setup = require('./util/setup')
 
 const doc = `
 nvivn
@@ -22,6 +23,9 @@ Usage:
   nvivn list [options] [--new] [<filter>...]
   nvivn server [--port <port>] [--tcp] [--http] [--https] [--socket <socket>]
   nvivn info [options]
+  nvivn sync <hub>
+  nvivn push <hub>
+  nvivn pull <hub>
 Options:
   --type <type>   Type of signature
   --hub <hub>     Communicate with a remote hub.
@@ -57,10 +61,17 @@ const run = async (args, passedOpts) => {
     return []
   }
 
+  const command = Object.keys(args).find(
+    a => a[0].match(/[a-z]/i) && args[a] === true
+  )
+
+  if (['sync', 'push', 'pull'].includes(command)) {
+    const { client } = await setup()
+    const syncResult = await client[command](args['<hub>'])
+    return syncResult
+  }
+
   if (args['--hub']) {
-    const command = Object.keys(args).find(
-      a => a[0].match(/[a-z]/i) && args[a] === true
-    )
     debug(`generating command ${command} for remote hub`, args['--hub'])
     const m = { command, type: 'command' }
     // for now, the format is different per command

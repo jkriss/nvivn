@@ -24,6 +24,7 @@ const loadInfo = async filename => {
     const yamlConfig = yaml.safeDump({
       keys: k,
       messageStore: 'file:./messages',
+      syncStore: 'file:./.nvivn-sync',
     })
     await fs.writeFile(filename, `---\n${yamlConfig}---\n`)
   }

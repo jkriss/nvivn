@@ -16,10 +16,11 @@ const createClientTransport = (opts = {}) => {
           return res.text()
         } else {
           const m = await res.json()
-          emitter('error', m)
+          emitter.emit('error', m)
         }
       })
       .then(result => {
+        if (!result) return emitter.emit('end')
         const trimmed = result.trim()
         const lines = trimmed === '' ? [] : trimmed.split('\n')
         for (const line of lines) {

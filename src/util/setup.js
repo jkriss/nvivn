@@ -11,11 +11,21 @@ const createClientServer = async (config, clientOpts = {}) => {
   const publicKey = encode(keys.publicKey)
   const messageStore = getStore(config.messageStore, { publicKey })
   // TODO change syncStore this based on config file, too
+  let syncStore = new MemorySyncStore()
+  if (config.syncStore) {
+    const [type, filepath] = config.syncStore.split(':')
+    if (type === 'file') {
+      const FileSyncStore = require('../client/file-sync-store')
+      syncStore = new FileSyncStore({ filepath })
+    } else if (type !== 'memory') {
+      throw new Error(`sync store of type ${type} is not supported`)
+    }
+  }
   const opts = Object.assign(
     {
       messageStore,
       keys,
-      syncStore: new MemorySyncStore(),
+      syncStore,
       info: config.info,
     },
     clientOpts

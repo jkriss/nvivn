@@ -1,6 +1,6 @@
 {
   "name": "@nvivn/core",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
   "main": "src/index.js",
@@ -44,6 +44,7 @@
     "oyaml": "^0.1.5",
     "p-queue": "^3.0.0",
     "prompt": "^1.0.0",
+    "proper-lockfile": "^3.2.0",
     "scryptsy": "^2.0.0",
     "sodium-signatures": "^2.1.1",
     "subleveldown": "^3.0.1",

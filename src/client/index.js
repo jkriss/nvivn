@@ -92,12 +92,14 @@ class Client {
       (await createHttpClient({
         url: server,
       }))
+    debug('listing remote messages with', args)
     const results = await remote({
       command: 'list',
       args,
       opts: this.defaultOpts,
       transport,
     })
+    debug(`sorting ${results.length} pulled results`)
     // sort them oldest first, so newer stuff shows up first when listed
     const sortedResults = sortBy(results, 't')
     let count = 0
@@ -106,13 +108,14 @@ class Client {
       await commands.post(m, this.defaultOpts)
       count++
     }
-    this.syncStore.put(serverKey, start)
+    await this.syncStore.put(serverKey, start)
+    debug('pulled', count)
     return { count }
   }
   async push(server, opts = {}) {
     const serverKey = `${server}:push`
     const lastPush = await this.syncStore.get(serverKey)
-    const start = Date.now()
+    const start = opts.start || Date.now()
     // do stuff
     const results = await this.list({ since: lastPush })
     let count = 0
@@ -130,7 +133,8 @@ class Client {
         transport,
       })
     }
-    this.syncStore.put(serverKey, start)
+    await this.syncStore.put(serverKey, start)
+    debug('pushed', count)
     return { count }
   }
   async sync(server, opts = {}) {

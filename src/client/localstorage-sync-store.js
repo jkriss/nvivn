@@ -1,3 +1,5 @@
+const debug = require('debug')('nvivn:sync:localstorage')
+
 class LocalStorageSyncStore {
   constructor({ prefix }) {
     this.prefix = `nvivn.sync${prefix || ''}:`
@@ -6,7 +8,7 @@ class LocalStorageSyncStore {
     return `${this.prefix}${k}`
   }
   put(k, v) {
-    console.log('saving', k, '=', v)
+    debug('saving', k, '=', v)
     localStorage.setItem(this.key(k), JSON.stringify(v))
   }
   get(k) {
