@@ -48,7 +48,14 @@ async function remote({ command, args, transport, opts }) {
 }
 
 class Client {
-  constructor({ keys, messageStore, syncStore, info, peers }) {
+  constructor({
+    keys,
+    messageStore,
+    syncStore,
+    info,
+    peers,
+    transportGenerator,
+  }) {
     this.syncStore = syncStore || new MemSyncStore()
     this.peers = peers || []
     this.defaultOpts = {
@@ -56,6 +63,7 @@ class Client {
       messageStore,
       info,
     }
+    this.transportGenerator = transportGenerator || createHttpClient
     ;['create', 'sign', 'post', 'postMany', 'list', 'del', 'info'].forEach(
       c => {
         this[c] = (args = {}, opts = {}) => {
@@ -74,8 +82,9 @@ class Client {
     const signedMessage = await sign(fullMessage, this.defaultOpts)
     return signedMessage
   }
-  getPublicKey() {
-    return this.defaultOpts.keys.publicKey
+  getPublicKey({ encoded } = {}) {
+    const k = this.defaultOpts.keys.publicKey
+    return encoded ? encode(k) : k
   }
   setTransport(transport) {
     debug('set transport to', transport)
@@ -84,18 +93,15 @@ class Client {
   clear() {
     return this.defaultOpts.messageStore.clear()
   }
-  async pull(server, opts = {}) {
-    const serverKey = `${server}:pull`
+  async pull({ publicKey, url }, opts = {}) {
+    const serverInfo = await this.resolveServerInfo({ publicKey, url })
+    const serverKey = `${serverInfo.publicKey}:pull`
     const lastPull = await this.syncStore.get(serverKey)
     const start = Date.now()
     const args = Object.assign({ since: lastPull }, opts)
-    debug('pulling from', server, 'with args', args)
+    debug('pulling from', serverInfo, 'with args', args)
     // TODO make this an option so we can sync with other server types
-    const transport =
-      opts.transport ||
-      (await createHttpClient({
-        url: server,
-      }))
+    const transport = opts.transport || serverInfo.transport
     debug('listing remote messages with', args)
     const results = await remote({
       command: 'list',
@@ -113,23 +119,57 @@ class Client {
       count++
     }
     await this.syncStore.put(serverKey, start)
-    debug('pulled', count)
+    debug('pulled', count, serverKey)
     return { count }
   }
-  async push(server, opts = {}) {
-    const serverKey = `${server}:push`
+  async resolveServerInfo({ publicKey, url }) {
+    if (!publicKey && !url) throw new Error('Must provide publicKey or url')
+    let transport
+    if (url) {
+      // TODO warn if public key changes?
+      transport = await this.transportGenerator({ url })
+      const info = await remote({
+        command: 'info',
+        opts: this.defaultOpts,
+        transport,
+      })
+      if (publicKey && publicKey !== info.publicKey) {
+        throw new Error(
+          `Expected public key ${publicKey} from ${url}, but got ${
+            info.publicKey
+          }`
+        )
+      }
+      publicKey = info.publicKey
+    } else if (publicKey && !url) {
+      // TODO check local network, other lookup methods
+    }
+    if (!publicKey) throw new Error(`Couldn't find public key for ${url}`)
+    if (!transport && url) transport = await this.transportGenerator({ url })
+    return { publicKey, url, transport }
+  }
+  async push({ publicKey, url }, opts = {}) {
+    // get public key from the url, or vice versa (local discovery)
+    const serverInfo = await this.resolveServerInfo({ publicKey, url })
+    const serverKey = `${serverInfo.publicKey}:push`
     const lastPush = await this.syncStore.get(serverKey)
     const start = opts.start || Date.now()
     const results = await this.list({ since: lastPush })
-    const transport =
-      opts.transport ||
-      (await createHttpClient({
-        url: server,
-      }))
+    const transport = opts.transport || serverInfo.transport
     const messages = []
     // const writes = []
     for await (const m of results) {
-      messages.push(m)
+      // if it's a delete that's happened since the last sync, send it
+      // otherwise, only send it if it hasn't already been routed by this
+      // need to verify the routing signature so people can't keep messages from being routed this way
+      const alreadySeen = m.meta.signed.find(
+        s => s.publicKey === serverInfo.publicKey
+      )
+      const deletionMessage = m.meta.signed.find(s => s.type === 'deletion')
+      const sendMessage = !alreadySeen && !deletionMessage
+      // console.log(`message ${m.meta.hash} seen by ${serverInfo.publicKey}? ${alreadySeen}`)
+      // console.log("  ", m.meta.signed)
+      if (sendMessage) messages.push(m)
     }
     debug('posting', messages.length, 'messages')
     if (messages.length > 0) {
@@ -146,16 +186,15 @@ class Client {
       }
     }
     await this.syncStore.put(serverKey, start)
-    debug('pushed', messages.length)
+    debug('pushed', messages.length, serverKey)
     return { count: messages.length }
   }
   async sync(server, opts = {}) {
     if (!server) {
       return Promise.all(this.peers.map(p => this.sync(p, opts)))
     }
-    const push = await this.push(server, opts)
-    // as of now, this will also return the ones that just got pushed
     const pull = await this.pull(server, opts)
+    const push = await this.push(server, opts)
     return {
       push,
       pull,
