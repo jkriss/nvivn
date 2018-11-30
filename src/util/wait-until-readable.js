@@ -3,6 +3,7 @@ const waitUntilReadable = stream => {
     const cb = () => {
       stream.removeListener('readable', cb)
       stream.removeListener('end', cb)
+      stream.removeListener('error', errCb)
       resolve()
     }
     const errCb = err => {
