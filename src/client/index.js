@@ -79,6 +79,7 @@ class Client {
     info,
     peers,
     transportGenerator,
+    skipValidation,
   }) {
     this.syncStore = syncStore || new MemSyncStore()
     this.peers = peers || []
@@ -86,6 +87,7 @@ class Client {
       keys,
       messageStore,
       info,
+      skipValidation,
     }
     this.crons = {}
     this.transportGenerator = transportGenerator || createHttpClient

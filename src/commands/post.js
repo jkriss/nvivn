@@ -1,6 +1,7 @@
 const debug = require('debug')('nvivn:post')
 const assert = require('assert')
 const sign = require('./sign')
+const verify = require('./verify')
 const hash = require('../util/hash')
 
 const post = async (message, opts) => {
@@ -23,9 +24,21 @@ const post = async (message, opts) => {
   )
   const newMessages = messages.filter((m, i) => !exists[i])
   debug('done with exist check')
+  let toSign
+  if (!opts.skipValidation) {
+    debug(`checking to see what's valid of ${newMessages.length}`)
+    const validateOpts = Object.assign({ all: true }, opts)
+    const valid = newMessages.map(m => verify(m, validateOpts))
+    const validMessages = newMessages.filter((m, i) => valid[i])
+    debug(`${validMessages.length} valid`)
+    toSign = validMessages
+  } else {
+    debug(`skipping validation!`)
+    toSign = newMessages
+  }
   // sign first
   debug('signing')
-  const signedMessages = messages.map(m =>
+  const signedMessages = toSign.map(m =>
     sign(m, { keys: opts.keys, signProps: { type: 'route' } })
   )
   // for (const message of messages) {
