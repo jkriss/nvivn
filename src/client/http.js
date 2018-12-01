@@ -1,9 +1,11 @@
+const debug = require('debug')('nvivn:transport:http')
 const fetch = require('cross-fetch')
 const EventEmitter = require('events')
 
 const createClientTransport = (opts = {}) => {
   const request = message => {
     const emitter = new EventEmitter()
+    debug('starting fetch')
     fetch(opts.url, {
       method: 'POST',
       headers: {
@@ -12,7 +14,8 @@ const createClientTransport = (opts = {}) => {
       body: JSON.stringify(message),
     })
       .then(async res => {
-        if (res.status === 200) {
+        debug('got fetch response')
+        if (res.ok) {
           return res.text()
         } else {
           const m = await res.json()
@@ -35,6 +38,10 @@ const createClientTransport = (opts = {}) => {
         }
         emitter.emit('end')
       })
+      .catch(err => {
+        emitter.emit('error', err)
+      })
+
     return emitter
   }
   return {

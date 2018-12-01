@@ -40,24 +40,34 @@ const commands = {
 }
 
 async function remote({ command, args, transport, opts }) {
-  debug(`generating command ${command} for remote transport with args`, args)
+  debug(`generating command ${command} for remote transport`)
   const m = { command, type: 'command', args: without(args, 'transport') }
   // create and sign
   const fullMessage = await create(m, opts)
   const signedMessage = await sign(fullMessage, opts)
-  debug('signed message:', signedMessage)
+  // debug('signed message:', signedMessage)
   // run against remote host
-  // const result = await remoteRun(signedMessage, hub)
-  // return result
-  const req = transport.request(signedMessage)
   return new Promise((resolve, reject) => {
-    // just buffer them all for now, can get fancy later
-    const results = []
-    req.on('data', d => results.push(d))
-    req.on('error', err => reject(err))
-    req.on('end', () => {
-      resolve(command === 'list' ? results : results[0])
-    })
+    try {
+      debug('starting remote request')
+      const req = transport.request(signedMessage)
+      debug('finished remote request, handling data')
+
+      // just buffer them all for now, can get fancy later
+      const results = []
+      req.on('data', d => results.push(d))
+      req.on('error', err => {
+        debug('error running remote call:', err)
+        reject(err)
+      })
+      req.on('end', () => {
+        debug(`finished running ${command}`)
+        resolve(command === 'list' ? results : results[0])
+      })
+    } catch (err) {
+      debug('error running remote call:', err)
+      reject(err)
+    }
   })
 }
 
@@ -98,8 +108,19 @@ class Client {
         debug(`will sync with ${JSON.stringify(peer)} ${peer.sync}`)
         const cronPattern = friendlyCron(peer.sync) || peer.sync
         this.crons[peer] = new CronJob(cronPattern, () => {
+          if (this.crons[peer] && this.crons[peer].isRunning) {
+            console.log('-- sync already running, skipping --')
+            return
+          }
           debug('syncing with', peer)
-          this.sync(peer).then(result => console.log('synced:', result))
+          this.crons[peer].isRunning = true
+          this.sync(peer)
+            .then(result => console.log('synced:', result))
+            .catch(err => console.error('error syncing', err))
+            .finally(() => {
+              console.log('done with auto sync, cleaning up')
+              this.crons[peer].isRunning = false
+            })
         })
       }
     }
