@@ -134,7 +134,7 @@ class Client {
     return Object.assign({ count, start }, without(serverInfo, 'transport'))
   }
   async resolveServerInfo({ publicKey, url }) {
-    console.log('resolving server with', publicKey, url)
+    debug('resolving server with', publicKey, url)
     if (!publicKey && !url) throw new Error('Must provide publicKey or url')
     let transport
     if (url) {
@@ -218,6 +218,7 @@ class Client {
   }
   async sync(server, opts = {}) {
     if (!server) {
+      debug('syncing peers:', this.peers)
       return Promise.all(this.peers.map(p => this.sync(p, opts)))
     }
     const pull = await this.pull(server, opts)

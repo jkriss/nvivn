@@ -23,9 +23,9 @@ Usage:
   nvivn list [options] [--new] [<filter>...]
   nvivn server [--port <port>] [--tcp] [--http] [--https] [--socket <socket>]
   nvivn info [options]
-  nvivn sync [<hub>]
-  nvivn push <hub>
-  nvivn pull <hub>
+  nvivn sync [--url <url>] [--key <key>]
+  nvivn push [--url <url>] [--key <key>]
+  nvivn pull [--url <url>] [--key <key>]
 Options:
   --type <type>   Type of signature
   --hub <hub>     Communicate with a remote hub.
@@ -67,7 +67,10 @@ const run = async (args, passedOpts) => {
 
   if (['sync', 'push', 'pull'].includes(command)) {
     const { client } = await setup()
-    const syncResult = await client[command](args['<hub>'])
+    const url = args['<url>']
+    const publicKey = args['<key>']
+    const server = (url || publicKey) && { url, publicKey }
+    const syncResult = await client[command](server)
     return syncResult
   }
 
