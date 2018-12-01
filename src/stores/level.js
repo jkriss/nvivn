@@ -4,6 +4,7 @@ const monotonicTimestamp = require('monotonic-timestamp')
 const sub = require('subleveldown')
 const { promisify } = require('es6-promisify')
 const streamIterator = require('../util/stream-iterator')
+const sinceExtractor = require('../util/since')
 
 const timestamp = date => {
   if (!date) return monotonicTimestamp().toString(36)
@@ -121,10 +122,15 @@ class LevelStore {
     await this.hashesDb.del(hash)
   }
   async *messageGenerator(q) {
+    debug('getting messages with q', q)
     let limit = -1
     if (q && q.$limit) {
       limit = q.$limit
       delete q.$limit
+    }
+    let sinceCheck = () => true
+    if (q && q.since) {
+      sinceCheck = sinceExtractor({ since: q.since, publicKey: this.publicKey })
     }
     const f = q ? filter(q, { publicKey: this.publicKey }) : null
     const messages = streamIterator(
@@ -132,6 +138,11 @@ class LevelStore {
     )
     let count = 0
     for await (const m of messages) {
+      const passesSince = sinceCheck(m)
+      if (!passesSince) {
+        debug('went back far enough, stopping now')
+        break
+      }
       if (!f || (f && f(m))) {
         if (m && m.expr !== undefined && m.expr <= Date.now()) {
           this.del(m.meta.hash)
