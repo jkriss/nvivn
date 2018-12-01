@@ -64,14 +64,12 @@ module.exports = (name, createStore) => {
   tap.test(`${name}: don't write the same message twice`, async function(t) {
     await store.clear()
     const m = create('hi')
-    console.log('--- message hash:', m.meta.hash)
     await store.write(m)
     const mExists = await store.exists(m.meta.hash)
     t.true(mExists)
     await store.write(m)
     let items = 0
     for await (message of store) {
-      console.log('--- read hash', message.meta.hash)
       items++
     }
     t.equal(items, 1)

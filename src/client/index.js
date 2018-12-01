@@ -9,7 +9,8 @@ const without = require('../util/without')
 const commands = {
   remote,
   create,
-  del: ({ hash, hard }, { messageStore }) => del(hash, { hard, messageStore }),
+  del: ({ hash, hard }, { messageStore, keys }) =>
+    del(hash, { hard, messageStore, keys }),
   sign,
   post,
   postMany,
@@ -97,7 +98,7 @@ class Client {
     const serverInfo = await this.resolveServerInfo({ publicKey, url })
     const serverKey = `${serverInfo.publicKey}:pull`
     const lastPull = await this.syncStore.get(serverKey)
-    const start = Date.now()
+    const start = Date.now() - 1
     const args = Object.assign({ since: lastPull }, opts)
     debug('pulling from', serverInfo, 'with args', args)
     // TODO make this an option so we can sync with other server types
@@ -120,7 +121,7 @@ class Client {
     }
     await this.syncStore.put(serverKey, start)
     debug('pulled', count, serverKey)
-    return Object.assign({ count }, without(serverInfo, 'transport'))
+    return Object.assign({ count, start }, without(serverInfo, 'transport'))
   }
   async resolveServerInfo({ publicKey, url }) {
     if (!publicKey && !url) throw new Error('Must provide publicKey or url')
@@ -153,7 +154,7 @@ class Client {
     const serverInfo = await this.resolveServerInfo({ publicKey, url })
     const serverKey = `${serverInfo.publicKey}:push`
     const lastPush = await this.syncStore.get(serverKey)
-    const start = opts.start || Date.now()
+    const start = Date.now() - 1
     const results = await this.list({ since: lastPush })
     const transport = opts.transport || serverInfo.transport
     const messages = []
@@ -165,15 +166,10 @@ class Client {
       const alreadySeen = m.meta.signed.find(
         s => s.publicKey === serverInfo.publicKey
       )
-      // TODO need to verify the routing signature so people can't keep messages from being routed this way
-      // actually, these should be verified on their way in
-
       const recentDeletionMessage = m.meta.signed.find(
-        s => s.type === 'deletion' && s.t > start
+        s => s.type === 'deletion' && (!lastPush || s.t > lastPush)
       )
-      const sendMessage = !alreadySeen && !recentDeletionMessage
-      // console.log(`message ${m.meta.hash} seen by ${serverInfo.publicKey}? ${alreadySeen}`)
-      // console.log("  ", m.meta.signed)
+      const sendMessage = recentDeletionMessage || !alreadySeen
       if (sendMessage) messages.push(m)
     }
     debug('posting', messages.length, 'messages')
@@ -193,7 +189,7 @@ class Client {
     await this.syncStore.put(serverKey, start)
     debug('pushed', messages.length, serverKey)
     return Object.assign(
-      { count: messages.length },
+      { count: messages.length, start },
       without(serverInfo, 'transport')
     )
   }

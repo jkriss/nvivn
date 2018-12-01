@@ -94,11 +94,8 @@ class FileStore {
   async exists(hash) {
     return this.hashExists(getHashPath(hash))
   }
-  async del(hash) {
-    return this.operationQueue.add(async () => {
-      const result = await this._del(hash)
-      return result
-    })
+  del(hash) {
+    return this.operationQueue.add(() => this._del(hash))
   }
   async _del(hash) {
     debug('!!!!! deleting', hash)
@@ -127,11 +124,8 @@ class FileStore {
     debug('this.del deleting hash')
     await this.deleteHash(getHashPath(hash))
   }
-  async write(message) {
-    return this.operationQueue.add(async () => {
-      const result = await this._write(message)
-      return result
-    })
+  write(message) {
+    return this.operationQueue.add(() => this._write(message))
   }
   async _write(message) {
     const exists = await this.exists(message.meta.hash)

@@ -10,10 +10,11 @@ const createHttpClient = require('../src/client/http')
 const createInProcessTransport = require('../src/server/in-process')
 const { encode } = require('../src/util/encoding')
 const fs = require('fs-extra')
+const sleep = require('await-sleep')
 
 const createClient = ({ keys } = {}) => {
   if (!keys) keys = signatures.keyPair()
-  const messageStore = new MemoryStore({ publicKey: keys.publicKey })
+  const messageStore = new MemoryStore({ publicKey: encode(keys.publicKey) })
   const syncStore = new MemorySyncStore()
   return new Client({ messageStore, keys, syncStore })
 }
@@ -212,10 +213,9 @@ tap.test(`sync both ways over http by url`, async function(t) {
     const { push, pull } = await otherClient.sync({
       url: 'http://localhost:9898',
     })
-    console.log('push result:', push)
-    console.log('pull result:', pull)
+    // console.log('push result:', push)
+    // console.log('pull result:', pull)
     t.equal(push.count, 3)
-    // the pull includes the ones that were just pushed, but hashes won't be overwritten
     t.equal(pull.count, 2)
     t.equal(client.defaultOpts.messageStore.messages.length, 5)
     t.equal(otherClient.defaultOpts.messageStore.messages.length, 5)
@@ -224,4 +224,57 @@ tap.test(`sync both ways over http by url`, async function(t) {
   }
 })
 
-// TODO sync a delete even if the hash has been seen already
+tap.test(`sync a delete even if the hash has been seen already`, async function(
+  t
+) {
+  const server = createServer()
+  const client = server.client
+  const otherClient = createClient()
+  server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+  const m = await otherClient
+    .create({ body: 'hi' })
+    .then(otherClient.sign)
+    .then(otherClient.post)
+  t.equal(
+    otherClient.defaultOpts.messageStore.messages.length,
+    1,
+    'saved a message'
+  )
+  t.equal(
+    client.defaultOpts.messageStore.messages.length,
+    0,
+    'client is empty still'
+  )
+  const transport = createInProcessTransport({ server })
+  let push = await otherClient.push(
+    { publicKey: client.getPublicKey({ encoded: true }) },
+    { transport }
+  )
+  t.equal(push.count, 1, 'pushed one message')
+  t.equal(
+    client.defaultOpts.messageStore.messages.length,
+    1,
+    'the client we pushed to has 1 message now'
+  )
+
+  await otherClient.del({ hash: m.meta.hash })
+  // console.log("!!!!! the deleted message:", otherClient.defaultOpts.messageStore.messages)
+  t.notOk(
+    otherClient.defaultOpts.messageStore.messages[0].body,
+    'after deletion, the message body should be null'
+  )
+  push = await otherClient.push(
+    { publicKey: client.getPublicKey({ encoded: true }) },
+    { transport }
+  )
+  t.equal(push.count, 1, 'should have pushed one message')
+  t.equal(
+    client.defaultOpts.messageStore.messages.length,
+    1,
+    'the client we pushed to should still have 1 message'
+  )
+  t.notOk(
+    client.defaultOpts.messageStore.messages[0].body,
+    'the client we pushed to should have a null message body'
+  )
+})

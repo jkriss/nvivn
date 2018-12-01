@@ -3,6 +3,12 @@ const filter = require('../util/filter')
 class MemoryStore {
   constructor(opts = {}) {
     this.publicKey = opts.publicKey
+    if (this.publicKey && typeof this.publicKey !== 'string') {
+      throw new Error(
+        `publicKey should be a base64 encoded string, not a ${typeof this
+          .publicKey}`
+      )
+    }
     this.messages = []
     this.hashes = {}
   }

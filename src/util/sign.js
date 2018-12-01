@@ -3,6 +3,7 @@ const without = require('../util/without')
 const normalizedNonMeta = require('../util/normalized-non-meta')
 const signatures = require('sodium-signatures')
 const { encode } = require('../util/encoding')
+const timestamp = require('monotonic-timestamp')
 
 const signPayload = (message, secretKeyBuffer) => {
   debug('signing', normalizedNonMeta(message))
@@ -15,7 +16,7 @@ const signPayload = (message, secretKeyBuffer) => {
 
 const sign = (message, opts = {}) => {
   debug('signing', message)
-  const t = Date.now()
+  const t = timestamp()
   const signProps = opts.signProps || {}
   const objToSign = {
     hash: message.meta.hash,

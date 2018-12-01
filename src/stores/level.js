@@ -1,12 +1,12 @@
 const debug = require('debug')('nvivn:store:level')
 const filter = require('../util/filter')
-const monotonicTmestamp = require('monotonic-timestamp')
+const monotonicTimestamp = require('monotonic-timestamp')
 const sub = require('subleveldown')
 const { promisify } = require('es6-promisify')
 const streamIterator = require('../util/stream-iterator')
 
 const timestamp = date => {
-  if (!date) return monotonicTmestamp().toString(36)
+  if (!date) return monotonicTimestamp().toString(36)
   if (typeof date === 'number') return date.toString(36)
   if (date.getTime) return date.getTime().toString(36)
 }
