@@ -8,7 +8,16 @@ const hash = require('../util/hash')
 const normalizedSignatures = message => {
   if (!message.meta || !message.meta.signed) return []
   // recompute this to make sure the message hasn't been tampered with
-  const h = hash(message)
+  let h
+  if (
+    message.meta.signed &&
+    message.meta.signed.find(s => s.type === 'deletion')
+  ) {
+    // trust the old message hash, we're just verifying the signatures
+    h = message.meta.hash
+  } else {
+    h = hash(message)
+  }
   debug('hash of message', message, 'is', h)
   return message.meta.signed.map(sig => {
     const sigClone = without(

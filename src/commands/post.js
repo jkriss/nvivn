@@ -29,6 +29,7 @@ const post = async (message, opts) => {
     debug(`checking to see what's valid of ${newMessages.length}`)
     const validateOpts = Object.assign({ all: true }, opts)
     const valid = newMessages.map(m => verify(m, validateOpts))
+    // deleted messages won't be valid, need to verify the signature but not the hash
     const validMessages = newMessages.filter((m, i) => valid[i])
     debug(`${validMessages.length} valid`)
     toSign = validMessages

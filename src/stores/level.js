@@ -1,4 +1,5 @@
 const debug = require('debug')('nvivn:store:level')
+const assert = require('assert')
 const filter = require('../util/filter')
 const monotonicTimestamp = require('monotonic-timestamp')
 const sub = require('subleveldown')
@@ -27,26 +28,17 @@ class LevelStore {
   constructor(opts = {}) {
     if (!opts.db)
       throw new Error('Must supply a db argument with a level instance')
-    // debug('new level store with opts', opts)
     this.publicKey = opts.publicKey
     this.topLevelDb = opts.db
     this.db = sub(opts.db, 'main', { valueEncoding: 'json' })
     this.hashesDb = sub(opts.db, 'hashes')
   }
   async write(message) {
-    // const exists = await this.exists(message.meta.hash)
-    // if (exists) return
-    // const t = timestamp()
-    // // debug("timestamp", t, "for hash", message.meta.hash)
-    // debug('writing hash', message.meta.hash)
-    // await this.hashesDb.put(message.meta.hash, t)
-    // return this.db.put(t, message)
     return this.writeMany([message])
   }
   async writeMany(messages) {
-    const exists = this.existsMany(messages.map(m => this.exists(m.meta.hash))) //await Promise.all(messages.map(m => this.exists(m.meta.hash)))
+    const exists = await this.existsMany(messages.map(m => m.meta.hash))
     const newMessages = messages.filter((m, i) => !exists[i])
-    // this.messages = this.messages.concat(newMessages)
     const timestamps = newMessages.map(() => timestamp())
     const hashWrite = this.hashesDb.batch(
       newMessages.map((m, i) => {
@@ -68,11 +60,9 @@ class LevelStore {
       debug('found timestamp', t, 'for hash', hash)
       result = await this.db.get(t)
     } catch (err) {
-      // debug("err:", err)
       if (err.notFound) return null
       throw err
     }
-    // const m = JSON.parse(result.toString())
     const m = result
     if (m && m.expr !== undefined && m.expr <= Date.now()) {
       this.del(m.meta.hash)
@@ -81,12 +71,14 @@ class LevelStore {
     return m
   }
   existsMany(hashes) {
-    // debug("checking hashes:", hashes)
-    // return this.hashesDb.batch(hashes.map(h => ({ type: 'get', key: 'h' })))
+    if (hashes[0])
+      assert(
+        typeof hashes[0] === 'string',
+        `hashes must be strings, not ${typeof hashes[0]}`
+      )
     return Promise.all(
       hashes.map(h => {
         return this.hashesDb.get(h).catch(err => {
-          // console.log("!!! err:", err, "not found?", err.notFound)
           if (err.notFound) {
             return false
           } else {
@@ -99,13 +91,6 @@ class LevelStore {
   }
   exists(hash) {
     return this.existsMany([hash]).then(results => results[0])
-    // return this.hashesDb.get(hash)
-    //   .then(() => true)
-    //   .catch(err => {
-    //     if (err.notFound)
-    //       return false
-    //     else throw err
-    //   })
   }
   async clear() {
     debug('--- clearing ---')

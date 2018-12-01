@@ -65,8 +65,11 @@ module.exports = (name, createStore) => {
     await store.clear()
     const m = create('hi')
     await store.write(m)
+    console.log('---- wrote once ----')
     const mExists = await store.exists(m.meta.hash)
+    console.log('exists??', mExists)
     t.true(mExists)
+    console.log('---- writing a second time ----')
     await store.write(m)
     let items = 0
     for await (message of store) {
