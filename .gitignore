@@ -6,4 +6,4 @@ dist
 .cache
 messages*
 test/tmp
-.nvivn
+.nvivn*

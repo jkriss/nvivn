@@ -1,3 +1,4 @@
+const debug = require('debug')('nvivn:server:http')
 const http = require('http')
 const EventEmitter = require('events')
 const url = require('url')
@@ -9,6 +10,7 @@ const createServerTransport = (opts = {}) => {
   const server = opts.server
 
   const handler = cors(async (req, res) => {
+    debug('handling', req.url, 'method', req.method)
     if (req.method === 'OPTIONS') return send(res, 200)
     const requestUrl = url.parse(req.url)
     if (req.method !== 'POST' || requestUrl.pathname !== '/')
@@ -31,11 +33,15 @@ const createServerTransport = (opts = {}) => {
 
   const listen = port => {
     return new Promise(resolve => {
-      httpServer.listen(port, () => resolve({ port }))
+      httpServer.listen(port, () => {
+        debug('http server listening on port', port)
+        resolve({ port })
+      })
     })
   }
   const close = () => {
     return new Promise(resolve => {
+      debug('closing server')
       httpServer.close(() => resolve())
     })
   }

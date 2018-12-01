@@ -1,5 +1,15 @@
 const debug = require('debug')('nvivn:client')
-const { create, sign, list, del, post, postMany, info } = require('../index')
+const assert = require('assert')
+const {
+  create,
+  sign,
+  list,
+  del,
+  post,
+  postMany,
+  info,
+  verify,
+} = require('../index')
 const { encode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
@@ -124,18 +134,31 @@ class Client {
     return Object.assign({ count, start }, without(serverInfo, 'transport'))
   }
   async resolveServerInfo({ publicKey, url }) {
+    console.log('resolving server with', publicKey, url)
     if (!publicKey && !url) throw new Error('Must provide publicKey or url')
     let transport
     if (url) {
-      // TODO warn if public key changes?
       transport = await this.transportGenerator({ url })
       const info = await remote({
         command: 'info',
         opts: this.defaultOpts,
         transport,
       })
-      if (publicKey && publicKey !== info.publicKey) {
-        throw new Error(
+      assert(
+        verify(info, { all: true }),
+        `info message from ${url} was not properly signed`
+      )
+      assert.equal(
+        info.publicKey,
+        info.meta.signed[0].publicKey,
+        `info message from ${url} was signed with ${
+          info.meta.signed[0].publicKey
+        }, expected ${info.publicKey}`
+      )
+      if (publicKey) {
+        assert.equal(
+          publicKey,
+          info.publicKey,
           `Expected public key ${publicKey} from ${url}, but got ${
             info.publicKey
           }`

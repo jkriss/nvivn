@@ -278,3 +278,33 @@ tap.test(`sync a delete even if the hash has been seen already`, async function(
     'the client we pushed to should have a null message body'
   )
 })
+
+tap.test(
+  `throw an error if public key doesn't match the expected value`,
+  async function(t) {
+    t.plan(2)
+    const server = createServer()
+    const client = server.client
+    const otherClient = createClient()
+    const port = 9898
+    const httpServer = createHttpServer({ server })
+    await httpServer.listen(port)
+    server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+    try {
+      await otherClient.pull({
+        publicKey: 'notthekey',
+        url: 'http://localhost:9898',
+      })
+    } catch (err) {
+      t.ok(err)
+      t.ok(
+        err.message.includes('Expected public key notthekey'),
+        'should have the error we expect'
+      )
+    } finally {
+      httpServer.close()
+    }
+  }
+)
+
+// TODO verify signature of the info message and make sure the public key is the one that's signed
