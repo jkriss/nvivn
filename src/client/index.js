@@ -18,6 +18,7 @@ const without = require('../util/without')
 const stringify = require('fast-json-stable-stringify')
 const friendlyCron = require('friendly-cron')
 const CronJob = require('cron').CronJob
+const EventEmitter = require('events')
 
 const commands = {
   remote,
@@ -71,7 +72,7 @@ async function remote({ command, args, transport, opts }) {
   })
 }
 
-class Client {
+class Client extends EventEmitter {
   constructor({
     keys,
     messageStore,
@@ -81,6 +82,7 @@ class Client {
     transportGenerator,
     skipValidation,
   }) {
+    super()
     this.syncStore = syncStore || new MemSyncStore()
     this.peers = peers || []
     this.defaultOpts = {
@@ -111,28 +113,36 @@ class Client {
         const cronPattern = friendlyCron(peer.sync) || peer.sync
         this.crons[peer] = new CronJob(cronPattern, () => {
           if (this.crons[peer] && this.crons[peer].isRunning) {
-            console.log('-- sync already running, skipping --')
             return
           }
           debug('syncing with', peer)
           this.crons[peer].isRunning = true
           this.sync(peer)
-            .then(result => console.log('synced:', result))
-            .catch(err => console.error('error syncing', err))
+            .catch(err => this.emit('error', err))
             .finally(() => {
-              console.log('done with auto sync, cleaning up')
               this.crons[peer].isRunning = false
             })
         })
       }
     }
   }
+  addPeer(peer) {
+    this.peers.push(peer)
+    if (this._autoSync) {
+      debug('restarting sync cron jobs')
+      this.stopAutoSync()
+      this.setupSync()
+      this.startAutoSync()
+    }
+  }
   startAutoSync() {
+    this._autoSync = true
     for (const job of Object.values(this.crons)) {
       job.start()
     }
   }
   stopAutoSync() {
+    this._autoSync = false
     for (const job of Object.values(this.crons)) {
       job.stop()
     }
@@ -179,14 +189,14 @@ class Client {
     // let count = 0
     const count = sortedResults.length
     await commands.postMany({ messages: sortedResults }, this.defaultOpts)
-    // for await (const m of sortedResults) {
-    //   // debug('posting', m)
-    //   await commands.post(m, this.defaultOpts)
-    //   count++
-    // }
     if (!opts.$limit) await this.syncStore.put(serverKey, start)
     debug('pulled', count, serverKey)
-    return Object.assign({ count, start }, without(serverInfo, 'transport'))
+    const pullResult = Object.assign(
+      { count, start },
+      without(serverInfo, 'transport')
+    )
+    this.emit('pulled', pullResult)
+    return pullResult
   }
   async resolveServerInfo({ publicKey, url }) {
     debug('resolving server with', publicKey, url)
@@ -269,10 +279,12 @@ class Client {
     }
     if (!opts.$limit) await this.syncStore.put(serverKey, start)
     debug('pushed', messages.length, serverKey)
-    return Object.assign(
+    const pushResults = Object.assign(
       { count: messages.length, start },
       without(serverInfo, 'transport')
     )
+    this.emit('pushed', pushResults)
+    return pushResults
   }
   async sync(server, opts = {}) {
     if (!server) {
