@@ -15,6 +15,7 @@ const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
 const createHttpClient = require('./http')
 const without = require('../util/without')
+const stringify = require('fast-json-stable-stringify')
 
 const commands = {
   remote,
@@ -106,7 +107,9 @@ class Client {
   }
   async pull({ publicKey, url }, opts = {}) {
     const serverInfo = await this.resolveServerInfo({ publicKey, url })
-    const serverKey = `${serverInfo.publicKey}:pull`
+    const serverKey = `${serverInfo.publicKey}:${stringify(
+      without(opts, 'transport')
+    )}:pull`
     const lastPull = await this.syncStore.get(serverKey)
     const start = Date.now() - 1
     const args = Object.assign({ since: lastPull }, opts)
@@ -123,13 +126,16 @@ class Client {
     debug(`sorting ${results.length} pulled results`)
     // sort them oldest first, so newer stuff shows up first when listed
     const sortedResults = sortBy(results, 't')
-    let count = 0
-    for await (const m of sortedResults) {
-      // debug('posting', m)
-      await commands.post(m, this.defaultOpts)
-      count++
-    }
-    await this.syncStore.put(serverKey, start)
+    debug(`sorting complete`)
+    // let count = 0
+    const count = sortedResults.length
+    await commands.postMany({ messages: sortedResults }, this.defaultOpts)
+    // for await (const m of sortedResults) {
+    //   // debug('posting', m)
+    //   await commands.post(m, this.defaultOpts)
+    //   count++
+    // }
+    if (!opts.$limit) await this.syncStore.put(serverKey, start)
     debug('pulled', count, serverKey)
     return Object.assign({ count, start }, without(serverInfo, 'transport'))
   }
@@ -175,8 +181,11 @@ class Client {
   async push({ publicKey, url }, opts = {}) {
     // get public key from the url, or vice versa (local discovery)
     const serverInfo = await this.resolveServerInfo({ publicKey, url })
-    const serverKey = `${serverInfo.publicKey}:push`
+    const serverKey = `${serverInfo.publicKey}:${stringify(
+      without(opts, 'transport')
+    )}:push`
     const lastPush = await this.syncStore.get(serverKey)
+    console.log('last push', lastPush)
     const start = Date.now() - 1
     const results = await this.list({ since: lastPush })
     const transport = opts.transport || serverInfo.transport
@@ -209,7 +218,7 @@ class Client {
         })
       }
     }
-    await this.syncStore.put(serverKey, start)
+    if (!opts.$limit) await this.syncStore.put(serverKey, start)
     debug('pushed', messages.length, serverKey)
     return Object.assign(
       { count: messages.length, start },

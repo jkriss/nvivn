@@ -22,6 +22,15 @@ class MemoryStore {
       this.hashes[message.meta.hash] = true
     }
   }
+  async writeMany(messages) {
+    const exists = await Promise.all(
+      messages.map(m => this.exists(m.meta.hash))
+    )
+    const newMessages = messages.filter((m, i) => !exists[i])
+    newMessages.forEach(m => (this.hashes[m.meta.hash] = true))
+    this.messages = this.messages.concat(newMessages)
+    return newMessages
+  }
   async get(hash) {
     const m = this.messages.find(m => m.meta.hash === hash)
     if (m && m.expr !== undefined && m.expr <= Date.now()) {

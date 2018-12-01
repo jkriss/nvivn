@@ -1,3 +1,4 @@
+const debug = require('debug')('nvivn:store:nedb')
 const Datastore = require('nedb')
 const { promisify } = require('es6-promisify')
 const without = require('../util/without')
@@ -17,20 +18,37 @@ const fetch = async (cursor, opts = {}) => {
 
 class NedbStore {
   constructor(opts = {}) {
-    console.log('nedb opts:', opts)
+    debug('nedb opts:', opts)
     this.db = new Datastore(opts)
     ;['insert', 'find', 'findOne', 'remove'].forEach(fn => {
       if (!this.db[fn]) throw new Error(`db object doesn't have a ${fn} method`)
       this[fn] = promisify(this.db[fn]).bind(this.db)
     })
     this.publicKey = opts.publicKey
-    this.db.ensureIndex({ fieldName: 'meta.hash' })
+    // this.db.ensureIndex({ fieldName: 'meta.hash' })
     this.db.ensureIndex({ fieldName: 't' })
     this.db.ensureIndex({ fieldName: 'type' })
   }
   async write(message) {
-    const exists = await this.exists(message.meta.hash)
-    if (!exists) return this.insert(message)
+    // const exists = await this.exists(message.meta.hash)
+    // if (!exists) return this.insert(message)
+    return this.writeMany([message])
+  }
+  async writeMany(messages) {
+    debug(`calling writeMany with ${messages.length} messages`)
+    const exists = await Promise.all(
+      messages.map(m => this.exists(m.meta.hash))
+    )
+    const stats = {
+      existing: exists.filter(e => e).length,
+      new: exists.filter(e => !e).length,
+    }
+    debug('stats:', stats)
+    const newMessages = messages.filter((m, i) => !exists[i])
+    const postedMessages = await this.insert(
+      newMessages.map(m => Object.assign({ _id: m.meta.hash }, m))
+    )
+    return postedMessages.map(m => without(m, '_id'))
   }
   async get(hash) {
     const m = await this.findOne({ 'meta.hash': hash })
@@ -43,9 +61,8 @@ class NedbStore {
   async del(hash) {
     return this.remove({ 'meta.hash': hash })
   }
-  async exists(hash) {
-    const m = await this.findOne({ 'meta.hash': hash })
-    return !!m
+  exists(hash) {
+    return this.findOne({ _id: hash }).then(r => !!r)
   }
   async clear() {
     await this.remove({}, { multi: true })
@@ -53,7 +70,9 @@ class NedbStore {
   async *messageGenerator(query) {
     const q = Object.assign({}, query)
     if (q.since) {
-      q.t = { $gt: datemath.parse(q.since) }
+      q.t = {
+        $gt: typeof q.since === 'number' ? q.since : datemath.parse(q.since),
+      }
       delete q.since
     }
     let idx = 0

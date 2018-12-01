@@ -33,13 +33,32 @@ class LevelStore {
     this.hashesDb = sub(opts.db, 'hashes')
   }
   async write(message) {
-    const exists = await this.exists(message.meta.hash)
-    if (exists) return
-    const t = timestamp()
-    // debug("timestamp", t, "for hash", message.meta.hash)
-    debug('writing hash', message.meta.hash)
-    await this.hashesDb.put(message.meta.hash, t)
-    return this.db.put(t, message)
+    // const exists = await this.exists(message.meta.hash)
+    // if (exists) return
+    // const t = timestamp()
+    // // debug("timestamp", t, "for hash", message.meta.hash)
+    // debug('writing hash', message.meta.hash)
+    // await this.hashesDb.put(message.meta.hash, t)
+    // return this.db.put(t, message)
+    return this.writeMany([message])
+  }
+  async writeMany(messages) {
+    const exists = this.existsMany(messages.map(m => this.exists(m.meta.hash))) //await Promise.all(messages.map(m => this.exists(m.meta.hash)))
+    const newMessages = messages.filter((m, i) => !exists[i])
+    // this.messages = this.messages.concat(newMessages)
+    const timestamps = newMessages.map(() => timestamp())
+    const hashWrite = this.hashesDb.batch(
+      newMessages.map((m, i) => {
+        return { type: 'put', key: m.meta.hash, value: timestamps[i] }
+      })
+    )
+    const messageWrite = this.db.batch(
+      newMessages.map((m, i) => {
+        return { type: 'put', key: timestamps[i], value: m }
+      })
+    )
+    await Promise.all([hashWrite, messageWrite])
+    return newMessages
   }
   async get(hash) {
     let result
@@ -60,19 +79,32 @@ class LevelStore {
     }
     return m
   }
-  async exists(hash) {
-    debug('-- checking hash:', hash)
-    let result
-    try {
-      result = await this.hashesDb.get(hash)
-      return true
-    } catch (err) {
-      debug('error while checking exists:', err)
-      if (err.notFound) {
-        return false
-      }
-      throw err
-    }
+  existsMany(hashes) {
+    // debug("checking hashes:", hashes)
+    // return this.hashesDb.batch(hashes.map(h => ({ type: 'get', key: 'h' })))
+    return Promise.all(
+      hashes.map(h => {
+        return this.hashesDb.get(h).catch(err => {
+          // console.log("!!! err:", err, "not found?", err.notFound)
+          if (err.notFound) {
+            return false
+          } else {
+            throw err
+          }
+          return true
+        })
+      })
+    ).then(results => results.map(r => !!r))
+  }
+  exists(hash) {
+    return this.existsMany([hash]).then(results => results[0])
+    // return this.hashesDb.get(hash)
+    //   .then(() => true)
+    //   .catch(err => {
+    //     if (err.notFound)
+    //       return false
+    //     else throw err
+    //   })
   }
   async clear() {
     debug('--- clearing ---')
@@ -81,6 +113,8 @@ class LevelStore {
     debug('--- cleared ---')
   }
   async del(hash) {
+    const exists = await this.exists(hash)
+    if (!exists) return
     const t = await this.hashesDb.get(hash)
     const m = await this.db.get(t)
     await this.db.del(t)
