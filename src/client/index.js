@@ -77,6 +77,7 @@ class Client {
       messageStore,
       info,
     }
+    this.crons = {}
     this.transportGenerator = transportGenerator || createHttpClient
     ;['create', 'sign', 'post', 'postMany', 'list', 'del', 'info'].forEach(
       c => {
@@ -92,21 +93,25 @@ class Client {
     this.setupSync()
   }
   setupSync() {
-    this.crons = {}
     for (const peer of this.peers) {
       if (peer.sync) {
-        console.log(`will sync with ${JSON.stringify(peer)} ${peer.sync}`)
+        debug(`will sync with ${JSON.stringify(peer)} ${peer.sync}`)
         const cronPattern = friendlyCron(peer.sync) || peer.sync
-        this.crons[peer] = new CronJob(
-          cronPattern,
-          () => {
-            console.log('syncing with', peer)
-            this.sync(peer).then(result => console.log('synced:', result))
-          },
-          null,
-          true
-        )
+        this.crons[peer] = new CronJob(cronPattern, () => {
+          debug('syncing with', peer)
+          this.sync(peer).then(result => console.log('synced:', result))
+        })
       }
+    }
+  }
+  startAutoSync() {
+    for (const job of Object.values(this.crons)) {
+      job.start()
+    }
+  }
+  stopAutoSync() {
+    for (const job of Object.values(this.crons)) {
+      job.stop()
     }
   }
   async signCommand({ command, args }) {
@@ -206,7 +211,7 @@ class Client {
       without(opts, 'transport')
     )}:push`
     const lastPush = await this.syncStore.get(serverKey)
-    console.log('last push', lastPush)
+    debug('last push', lastPush)
     const start = Date.now() - 1
     const results = await this.list({ since: lastPush })
     const transport = opts.transport || serverInfo.transport

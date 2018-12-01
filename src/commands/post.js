@@ -51,8 +51,8 @@ const post = async (message, opts) => {
     debug('no writeMany method, using write')
     results = []
     for (const m of signedMessages) {
-      const result = opts.messageStore.write(m)
-      results.push(result)
+      const result = await opts.messageStore.write(m)
+      results.push(m)
     }
     debug('done writing')
   }

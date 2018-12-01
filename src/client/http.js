@@ -24,7 +24,14 @@ const createClientTransport = (opts = {}) => {
         const trimmed = result.trim()
         const lines = trimmed === '' ? [] : trimmed.split('\n')
         for (const line of lines) {
-          emitter.emit('data', JSON.parse(line))
+          try {
+            emitter.emit('data', JSON.parse(line))
+          } catch (err) {
+            emitter.emit(
+              'error',
+              `Couldn't parse json: ${JSON.stringify(line)}`
+            )
+          }
         }
         emitter.emit('end')
       })
