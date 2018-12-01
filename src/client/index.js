@@ -16,6 +16,8 @@ const MemSyncStore = require('./mem-sync-store')
 const createHttpClient = require('./http')
 const without = require('../util/without')
 const stringify = require('fast-json-stable-stringify')
+const friendlyCron = require('friendly-cron')
+const CronJob = require('cron').CronJob
 
 const commands = {
   remote,
@@ -87,6 +89,25 @@ class Client {
         }
       }
     )
+    this.setupSync()
+  }
+  setupSync() {
+    this.crons = {}
+    for (const peer of this.peers) {
+      if (peer.sync) {
+        console.log(`will sync with ${JSON.stringify(peer)} ${peer.sync}`)
+        const cronPattern = friendlyCron(peer.sync) || peer.sync
+        this.crons[peer] = new CronJob(
+          cronPattern,
+          () => {
+            console.log('syncing with', peer)
+            this.sync(peer).then(result => console.log('synced:', result))
+          },
+          null,
+          true
+        )
+      }
+    }
   }
   async signCommand({ command, args }) {
     const m = { command, type: 'command', args }
