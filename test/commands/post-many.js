@@ -3,6 +3,7 @@ const signatures = require('sodium-signatures')
 const { decode } = require('../../src/util/encoding')
 const { create, postMany } = require('../../src/index')
 const MemoryStore = require('../../src/stores/memory')
+const verify = require('../../src/commands/verify')
 
 tap.test('post multiple messages', async function(t) {
   const messageStore = new MemoryStore()
@@ -14,4 +15,6 @@ tap.test('post multiple messages', async function(t) {
   t.true(m1Exists)
   const m2Exists = await messageStore.exists(m1.meta.hash)
   t.true(m2Exists)
+  const verified = await verify(posted, { all: true })
+  t.ok(verified, 'signature should be valid')
 })

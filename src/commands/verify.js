@@ -14,9 +14,11 @@ const normalizedSignatures = message => {
     message.meta.signed.find(s => s.type === 'deletion')
   ) {
     // trust the old message hash, we're just verifying the signatures
+    debug(`it's a deletion, use the message hash`)
     h = message.meta.hash
   } else {
     h = hash(message)
+    debug(`calculated hash ${h} (supplied hash was ${message.meta.hash})`)
   }
   debug('hash of message', message, 'is', h)
   return message.meta.signed.map(sig => {

@@ -38,6 +38,7 @@ const commands = {
     }
     return allResults
   },
+  verify,
 }
 
 async function remote({ command, args, transport, opts }) {
@@ -93,17 +94,24 @@ class Client extends EventEmitter {
     }
     this.crons = {}
     this.transportGenerator = transportGenerator || createHttpClient
-    ;['create', 'sign', 'post', 'postMany', 'list', 'del', 'info'].forEach(
-      c => {
-        this[c] = (args = {}, opts = {}) => {
-          if (this.transport) {
-            if (c === 'post') args = { message: args }
-          }
-          if (c === 'del') args = { hash: args.hash, hard: opts.hard }
-          return this.run(c, args)
+    ;[
+      'create',
+      'sign',
+      'post',
+      'postMany',
+      'list',
+      'del',
+      'info',
+      'verify',
+    ].forEach(c => {
+      this[c] = (args = {}, opts = {}) => {
+        if (this.transport) {
+          if (c === 'post') args = { message: args }
         }
+        if (c === 'del') args = { hash: args.hash, hard: opts.hard }
+        return this.run(c, args)
       }
-    )
+    })
     this.setupSync()
   }
   setupSync() {
@@ -254,9 +262,10 @@ class Client extends EventEmitter {
       // if it's a delete that's happened since the last sync, send it
       // otherwise, only send it if it hasn't already been routed by this
 
-      const alreadySeen = m.meta.signed.find(
-        s => s.publicKey === serverInfo.publicKey
-      )
+      const alreadySeen = false
+      // const alreadySeen = m.meta.signed.find(
+      //   s => s.publicKey === serverInfo.publicKey
+      // )
       const recentDeletionMessage = m.meta.signed.find(
         s => s.type === 'deletion' && (!lastPush || s.t > lastPush)
       )

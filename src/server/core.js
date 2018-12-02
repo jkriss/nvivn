@@ -1,7 +1,7 @@
 const debug = require('debug')('nvivn:server:core')
 const { verify } = require('../index')
 const { encode } = require('../util/encoding')
-const NodeCache = require('node-cache')
+// const NodeCache = require('node-cache')
 const MAX_SIGNATURE_AGE = 30 * 1000 // 30 seconds
 const { promisify } = require('es6-promisify')
 const EventEmitter = require('events')
@@ -12,12 +12,12 @@ class Server {
     this.client = opts.client
     this.publicKey = opts.client.getPublicKey()
     const maxSignatureAge = opts.maxSignatureAge || MAX_SIGNATURE_AGE
-    const cache = new NodeCache({
-      stdTTL: maxSignatureAge / 1000,
-      checkperiod: maxSignatureAge / 1000,
-    })
-    this.setCache = promisify(cache.set).bind(cache)
-    this.getCache = promisify(cache.get).bind(cache)
+    // const cache = new NodeCache({
+    //   stdTTL: maxSignatureAge / 1000,
+    //   checkperiod: maxSignatureAge / 1000,
+    // })
+    // this.setCache = promisify(cache.set).bind(cache)
+    // this.getCache = promisify(cache.get).bind(cache)
     this.trustedKeys = opts.trustedKeys || []
   }
   getPublicKey() {
@@ -65,10 +65,10 @@ class Server {
           return error('signature is not recent enough', 401)
         }
         // have we already processed this hash within the acceptable time frame?
-        const recentlyRun = await this.getCache(message.meta.hash)
-        if (recentlyRun) {
-          return error('command has already been run', 400)
-        }
+        // const recentlyRun = await this.getCache(message.meta.hash)
+        // if (recentlyRun) {
+        //   return error('command has already been run', 400)
+        // }
         debug('command run by', users)
         // const trueResults = users
         //   .map(u => this.isAllowed({ command: message.command, userPublicKey: u, message }))
@@ -88,7 +88,7 @@ class Server {
         if (!commandAllowed) {
           return error(`not allowed to run ${message.command}`)
         } else {
-          this.setCache(message.meta.hash, true)
+          // this.setCache(message.meta.hash, true)
           result = await this.client.run(message.command, message.args)
           debug('got result', result)
         }

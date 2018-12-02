@@ -182,7 +182,7 @@ tap.test(`sync both ways`, async function(t) {
     { publicKey: client.getPublicKey({ encoded: true }) },
     { transport }
   )
-  t.equal(push.count, 3)
+  t.equal(push.count, 5)
   // the pull includes the ones that were just pushed, but hashes won't be overwritten
   t.equal(pull.count, 2)
   t.equal(client.defaultOpts.messageStore.messages.length, 5)
@@ -215,7 +215,7 @@ tap.test(`sync both ways over http by url`, async function(t) {
     })
     // console.log('push result:', push)
     // console.log('pull result:', pull)
-    t.equal(push.count, 3)
+    t.equal(push.count, 5)
     t.equal(pull.count, 2)
     t.equal(client.defaultOpts.messageStore.messages.length, 5)
     t.equal(otherClient.defaultOpts.messageStore.messages.length, 5)
