@@ -3,7 +3,6 @@ const signatures = require('sodium-signatures')
 const Client = require('../src/client/index')
 const Server = require('../src/server/core')
 const MemoryStore = require('../src/stores/memory')
-const MemorySyncStore = require('../src/client/mem-sync-store')
 const tcp = require('../src/server/tcp')
 const createHttpServer = require('../src/server/http')
 const createHttpClient = require('../src/client/http')
@@ -16,9 +15,8 @@ const { getConfigDb } = require('../src/util/config-db')
 const createClient = async ({ keys } = {}) => {
   if (!keys) keys = signatures.keyPair()
   const messageStore = new MemoryStore({ publicKey: encode(keys.publicKey) })
-  const syncStore = new MemorySyncStore()
   const config = await getConfigDb()
-  return new Client({ messageStore, keys, syncStore, config })
+  return new Client({ messageStore, keys, config })
 }
 
 const createServer = async (opts = {}) => {

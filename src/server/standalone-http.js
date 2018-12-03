@@ -8,7 +8,7 @@ const createHttpServer = require('./http')
 const createHandler = async () => {
   const { config, client, server } = await setup()
   client.startAutoSync()
-  const info = await config.get('info')
+  const { info } = config.data()
   if (info && info.greeting) console.log(info.greeting)
   return createHttpServer({ server }).handler
 }

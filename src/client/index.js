@@ -12,7 +12,6 @@ const {
 } = require('../index')
 const { encode, decode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
-const MemSyncStore = require('./mem-sync-store')
 const createHttpClient = require('./http')
 const without = require('../util/without')
 const stringify = require('fast-json-stable-stringify')
@@ -77,14 +76,12 @@ class Client extends EventEmitter {
   constructor({
     keys,
     messageStore,
-    syncStore,
     transportGenerator,
     skipValidation,
     config,
   }) {
     super()
     this.peers = []
-    this.syncStore = syncStore || new MemSyncStore()
     this.defaultOpts = {
       keys,
       messageStore,
@@ -126,7 +123,6 @@ class Client extends EventEmitter {
         return this.run(c, args)
       }
     })
-    // this.setupSync()
   }
   setFromConfig(config) {
     debug('got new config:', config)
@@ -201,12 +197,21 @@ class Client extends EventEmitter {
   clear() {
     return this.defaultOpts.messageStore.clear()
   }
+  getSync(key) {
+    const syncs = this.config.data().syncs || {}
+    return syncs[key]
+  }
+  setSync(key, value) {
+    const syncs = this.config.data().syncs || {}
+    syncs[key] = value
+    this.config.set({ syncs })
+  }
   async pull({ publicKey, url }, opts = {}) {
     const serverInfo = await this.resolveServerInfo({ publicKey, url })
     const serverKey = `${serverInfo.publicKey}:${stringify(
       without(opts, 'transport')
     )}:pull`
-    const lastPull = await this.syncStore.get(serverKey)
+    const lastPull = this.getSync(serverKey)
     const start = Date.now() - 1
     const args = Object.assign({ since: lastPull }, opts)
     debug('pulling from', serverInfo, 'with args', args)
@@ -226,7 +231,7 @@ class Client extends EventEmitter {
     // let count = 0
     const count = sortedResults.length
     await commands.postMany({ messages: sortedResults }, this.defaultOpts)
-    if (!opts.$limit) await this.syncStore.put(serverKey, start)
+    if (!opts.$limit) this.setSync(serverKey, start)
     debug('pulled', count, serverKey)
     const pullResult = Object.assign(
       { count, start },
@@ -280,7 +285,7 @@ class Client extends EventEmitter {
     const serverKey = `${serverInfo.publicKey}:${stringify(
       without(opts, 'transport')
     )}:push`
-    const lastPush = await this.syncStore.get(serverKey)
+    const lastPush = this.getSync(serverKey)
     debug('last push', lastPush)
     const start = Date.now() - 1
     const results = await this.list({ since: lastPush })
@@ -315,7 +320,7 @@ class Client extends EventEmitter {
         })
       }
     }
-    if (!opts.$limit) await this.syncStore.put(serverKey, start)
+    if (!opts.$limit) this.setSync(serverKey, start)
     debug('pushed', messages.length, serverKey)
     const pushResults = Object.assign(
       { count: messages.length, start },
