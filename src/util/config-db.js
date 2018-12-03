@@ -18,6 +18,7 @@ const getConfigDb = async (opts = {}) => {
     debug('initialized data loaded', opts.data)
   }
   _data = Object.assign({}, _data, persistedData)
+  debug('initialized data plus persisted data:', JSON.stringify(_data.info))
   function set(data, opts = {}) {
     debug('-- setting data --')
     assert(
@@ -26,7 +27,7 @@ const getConfigDb = async (opts = {}) => {
     )
     const promises = []
     _data = Object.assign({}, _data, data)
-    debug('data now', JSON.stringify(_data))
+    // debug('merged data now', JSON.stringify(_data))
     if (!opts.silent) emitNew()
     for (const k of Object.keys(data)) {
       promises.push(
@@ -51,10 +52,10 @@ const getConfigDb = async (opts = {}) => {
       db.find({}, (err, docs) => {
         if (err) return reject(err)
         for (const doc of docs) {
-          debug('returning entry', doc)
+          // debug('returning entry', doc)
           obj[doc._id] = doc.value
         }
-        debug('returning obj:', obj)
+        // debug('returning obj:', obj)
         resolve(obj)
       })
     })

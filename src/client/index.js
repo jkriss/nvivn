@@ -82,24 +82,25 @@ class Client extends EventEmitter {
   }) {
     super()
     this.peers = []
+    const settings = config.data()
     this.defaultOpts = {
       keys,
       messageStore,
       skipValidation,
+      info: settings.info,
     }
-    const settings = config.data()
     debug('checking info:', settings.info)
     if (!settings.info) settings.info = {}
     if (!settings.info.peerId) {
       settings.info.peerId = Math.random()
         .toString(32)
         .slice(2, 8)
+      settings.info.url = `nvivn://${settings.info.peerId}${
+        settings.info.appName ? `.${settings.info.appName}` : ''
+      }.${decode(this.defaultOpts.keys.publicKey).toString('hex')}.nvivn`
       config.set({ info: settings.info })
     }
-    this.url = `nvivn://${settings.info.peerId}${
-      settings.info.appName ? `.${settings.info.appName}` : ''
-    }.${decode(this.defaultOpts.keys.publicKey).toString('hex')}.nvivn`
-    debug('url:', this.url)
+    debug('url:', config.data().info.url)
 
     config.on('change', this.setFromConfig.bind(this))
     this.config = config

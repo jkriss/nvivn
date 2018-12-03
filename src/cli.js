@@ -45,11 +45,12 @@ const parse = async (docOpts = {}) => {
 }
 
 const run = async (args, passedOpts) => {
-  const config = await loadConfig().then(db => db.data())
+  const config = await loadConfig()
+  const settings = config.data()
   let result
   const opts = Object.assign({}, passedOpts)
-  opts.keys = await config.keys
-  opts.info = await config.info
+  opts.keys = settings.keys
+  opts.info = settings.info
   debug('args:', args)
 
   if (args.server) {
@@ -65,8 +66,9 @@ const run = async (args, passedOpts) => {
     a => a[0].match(/[a-z]/i) && args[a] === true
   )
 
+  const { client } = await setup(config)
+
   if (['sync', 'push', 'pull'].includes(command)) {
-    const { client } = await setup()
     const url = args['<url>']
     const publicKey = args['<key>']
     const server = (url || publicKey) && { url, publicKey }
@@ -134,7 +136,8 @@ const run = async (args, passedOpts) => {
     )
   } else if (args.info) {
     debug('returning info')
-    result = await info(null, opts)
+    // result = await info(null, opts)
+    result = await client.info()
   }
   return result
 }
