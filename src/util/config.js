@@ -1,4 +1,5 @@
 require('dotenv').config()
+const debug = require('debug')('nvivn:config')
 const yaml = require('js-yaml')
 const fm = require('front-matter')
 const fs = require('fs-extra')
@@ -6,6 +7,7 @@ const path = require('path')
 const userHome = require('user-home')
 const { decode } = require('./encoding')
 const keys = require('./keys')
+const { getConfigDb } = require('./config-db')
 
 const findInfo = async (filename = '.nvivn') => {
   const paths = ['.', userHome]
@@ -16,7 +18,7 @@ const findInfo = async (filename = '.nvivn') => {
   }
 }
 
-const loadInfo = async filename => {
+const loadConfig = async filename => {
   if (!filename) filename = await findInfo()
   if (!filename) {
     filename = '.nvivn'
@@ -50,19 +52,28 @@ const loadInfo = async filename => {
     config.keys = {}
   }
   if (process.env.NVIVN_PUBLIC_KEY) {
-    config.keys.publicKey = decode(process.env.NVIVN_PUBLIC_KEY)
-  } else {
-    config.keys.publicKey = decode(config.keys.publicKey)
+    // config.keys.publicKey = decode(process.env.NVIVN_PUBLIC_KEY)
+    config.keys.publicKey = process.env.NVIVN_PUBLIC_KEY
+    // } else {
+    //   config.keys.publicKey = decode(config.keys.publicKey)
   }
   if (process.env.NVIVN_SECRET_KEY) {
-    config.keys.secretKey = decode(process.env.NVIVN_SECRET_KEY)
-  } else {
-    config.keys.secretKey = decode(config.keys.secretKey)
+    // config.keys.secretKey = decode(process.env.NVIVN_SECRET_KEY)
+    config.keys.secretKey = process.env.NVIVN_SECRET_KEY
+    // } else {
+    //   config.keys.secretKey = decode(config.keys.secretKey)
   }
-  return config
+  const dbFilename = `.nvivn-state/config-${decode(
+    config.keys.publicKey
+  ).toString('hex')}`
+  await fs.ensureDir(path.dirname(dbFilename))
+  return getConfigDb({ data: config, dbOpts: { filename: dbFilename } })
 }
 
-module.exports = loadInfo
+module.exports = {
+  loadConfig,
+  getConfigDb,
+}
 
 if (require.main === module) {
   loadInfo().then(console.log)

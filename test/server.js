@@ -11,31 +11,35 @@ const createInProcessTransport = require('../src/server/in-process')
 const { encode } = require('../src/util/encoding')
 const fs = require('fs-extra')
 const sleep = require('await-sleep')
+const { getConfigDb } = require('../src/util/config-db')
 
-const createClient = ({ keys } = {}) => {
+const createClient = async ({ keys } = {}) => {
   if (!keys) keys = signatures.keyPair()
   const messageStore = new MemoryStore({ publicKey: encode(keys.publicKey) })
   const syncStore = new MemorySyncStore()
-  return new Client({ messageStore, keys, syncStore })
+  const config = await getConfigDb()
+  return new Client({ messageStore, keys, syncStore, config })
 }
 
-const createServer = (opts = {}) => {
+const createServer = async (opts = {}) => {
   if (!opts.keys) opts.keys = signatures.keyPair()
-  const client = createClient({ keys: opts.keys })
+  const client = await createClient({ keys: opts.keys })
+  const config = await getConfigDb({ data: { trustedKeys: opts.trustedKeys } })
+  if (!opts.config) opts.config = config
   return new Server(Object.assign({ client }, opts))
 }
 
-const createServerClientPair = () => {
+const createServerClientPair = async () => {
   const keys = signatures.keyPair()
-  const server = createServer({ trustedKeys: [keys.publicKey] })
-  const client = createClient({ keys })
+  const server = await createServer({ trustedKeys: [encode(keys.publicKey)] })
+  const client = await createClient({ keys })
   return { server, client }
 }
 
 tap.test(`don't allow access by untrusted keys`, async function(t) {
   t.plan(1)
-  const server = createServer()
-  const client = createClient()
+  const server = await createServer()
+  const client = await createClient()
   const m = await client.signCommand({ command: 'list' })
   const req = server.handle(m)
   req.on('error', m => {
@@ -45,14 +49,14 @@ tap.test(`don't allow access by untrusted keys`, async function(t) {
 })
 
 tap.test(`empty list`, async function(t) {
-  const { server, client } = createServerClientPair()
+  const { server, client } = await createServerClientPair()
   const m = await client.signCommand({ command: 'list' })
   const res = server.handle(m)
   await new Promise(resolve => res.on('end', resolve))
 })
 
 tap.test(`get server info`, async function(t) {
-  const { server, client } = createServerClientPair()
+  const { server, client } = await createServerClientPair()
   const m = await client.signCommand({ command: 'info' })
   const res = server.handle(m)
   res.on('data', d => {
@@ -62,7 +66,7 @@ tap.test(`get server info`, async function(t) {
 })
 
 tap.test(`run server over tcp`, async function(t) {
-  const { server, client } = createServerClientPair()
+  const { server, client } = await createServerClientPair()
   const m = await client.signCommand({ command: 'info' })
   const socket = '/tmp/nvivn.sock'
   await fs.remove(socket)
@@ -83,7 +87,7 @@ tap.test(`run server over tcp`, async function(t) {
 })
 
 tap.test(`run server over http`, async function(t) {
-  const { server, client } = createServerClientPair()
+  const { server, client } = await createServerClientPair()
   const m = await client.signCommand({ command: 'info' })
   const port = 9898
   const httpServer = createHttpServer({ server })
@@ -104,10 +108,10 @@ tap.test(`run server over http`, async function(t) {
 })
 
 tap.test(`pull from a server`, async function(t) {
-  const server = createServer()
+  const server = await createServer()
   const client = server.client
-  const otherClient = createClient()
-  server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+  const otherClient = await createClient()
+  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
   for (let i = 0; i < 5; i++) {
     const posted = await client
       .create({ body: `hi ${i + 1}` })
@@ -136,10 +140,10 @@ tap.test(`pull from a server`, async function(t) {
 })
 
 tap.test(`push to a server`, async function(t) {
-  const server = createServer()
+  const server = await createServer()
   const client = server.client
-  const otherClient = createClient()
-  server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+  const otherClient = await createClient()
+  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
   for (let i = 0; i < 5; i++) {
     const posted = await otherClient
       .create({ body: `hi ${i + 1}` })
@@ -161,10 +165,10 @@ tap.test(`push to a server`, async function(t) {
 })
 
 tap.test(`sync both ways`, async function(t) {
-  const server = createServer()
+  const server = await createServer()
   const client = server.client
-  const otherClient = createClient()
-  server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+  const otherClient = await createClient()
+  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
   for (let i = 0; i < 2; i++) {
     const posted = await client
       .create({ body: `hi ${i + 1}` })
@@ -190,13 +194,13 @@ tap.test(`sync both ways`, async function(t) {
 })
 
 tap.test(`sync both ways over http by url`, async function(t) {
-  const server = createServer()
+  const server = await createServer()
   const client = server.client
-  const otherClient = createClient()
+  const otherClient = await createClient()
   const port = 9898
   const httpServer = createHttpServer({ server })
   await httpServer.listen(port)
-  server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
   for (let i = 0; i < 2; i++) {
     const posted = await client
       .create({ body: `hi ${i + 1}` })
@@ -227,10 +231,10 @@ tap.test(`sync both ways over http by url`, async function(t) {
 tap.test(`sync a delete even if the hash has been seen already`, async function(
   t
 ) {
-  const server = createServer()
+  const server = await createServer()
   const client = server.client
-  const otherClient = createClient()
-  server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+  const otherClient = await createClient()
+  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
   const m = await otherClient
     .create({ body: 'hi' })
     .then(otherClient.sign)
@@ -283,13 +287,13 @@ tap.test(
   `throw an error if public key doesn't match the expected value`,
   async function(t) {
     t.plan(2)
-    const server = createServer()
+    const server = await createServer()
     const client = server.client
-    const otherClient = createClient()
+    const otherClient = await createClient()
     const port = 9898
     const httpServer = createHttpServer({ server })
     await httpServer.listen(port)
-    server.trustedKeys.push(otherClient.defaultOpts.keys.publicKey)
+    server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
     try {
       await otherClient.pull({
         publicKey: 'notthekey',
@@ -307,4 +311,4 @@ tap.test(
   }
 )
 
-// TODO verify signature of the info message and make sure the public key is the one that's signed
+// // TODO verify signature of the info message and make sure the public key is the one that's signed

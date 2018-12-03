@@ -1,5 +1,6 @@
 const debug = require('debug')('nvivn:nvivn')
-const loadConfig = require('../src/util/config')
+const assert = require('assert')
+const { loadConfig } = require('../src/util/config')
 const { encode } = require('../src/util/encoding')
 const { nvivn } = require('../src/cli')
 const getStore = require('../src/util/store-connection')
@@ -26,7 +27,7 @@ const getPassphrase = () => {
 }
 
 const run = async () => {
-  const config = await loadConfig()
+  const config = await loadConfig().then(db => db.data())
   const publicKey = encode(config.keys.publicKey)
   const messageStore = getStore(config.messageStore, { publicKey })
 

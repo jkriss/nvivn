@@ -10,7 +10,7 @@ const {
   info,
   verify,
 } = require('../index')
-const { encode } = require('../util/encoding')
+const { encode, decode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
 const MemSyncStore = require('./mem-sync-store')
 const createHttpClient = require('./http')
@@ -78,20 +78,34 @@ class Client extends EventEmitter {
     keys,
     messageStore,
     syncStore,
-    info,
-    peers,
     transportGenerator,
     skipValidation,
+    config,
   }) {
     super()
+    this.peers = []
     this.syncStore = syncStore || new MemSyncStore()
-    this.peers = peers || []
     this.defaultOpts = {
       keys,
       messageStore,
-      info,
       skipValidation,
     }
+    const settings = config.data()
+    debug('checking info:', settings.info)
+    if (!settings.info) settings.info = {}
+    if (!settings.info.peerId) {
+      settings.info.peerId = Math.random()
+        .toString(32)
+        .slice(2, 8)
+      config.set({ info: settings.info })
+    }
+    this.url = `nvivn://${settings.info.peerId}${
+      settings.info.appName ? `.${settings.info.appName}` : ''
+    }.${decode(this.defaultOpts.keys.publicKey).toString('hex')}.nvivn`
+    debug('url:', this.url)
+
+    config.on('change', this.setFromConfig.bind(this))
+    this.config = config
     this.crons = {}
     this.transportGenerator = transportGenerator || createHttpClient
     ;[
@@ -112,7 +126,20 @@ class Client extends EventEmitter {
         return this.run(c, args)
       }
     })
-    this.setupSync()
+    // this.setupSync()
+  }
+  setFromConfig(config) {
+    debug('got new config:', config)
+    if (config.peers) this.peers = config.peers
+    this.defaultOpts.info = config.info
+    if (this._autoSync) {
+      debug('restarting sync cron jobs')
+      this.stopAutoSync()
+      this.setupSync()
+      this.startAutoSync()
+    } else {
+      this.setupSync()
+    }
   }
   setupSync() {
     for (const peer of this.peers) {
@@ -136,12 +163,14 @@ class Client extends EventEmitter {
   }
   addPeer(peer) {
     this.peers.push(peer)
-    if (this._autoSync) {
-      debug('restarting sync cron jobs')
-      this.stopAutoSync()
-      this.setupSync()
-      this.startAutoSync()
-    }
+    this.config.set('peers', this.peers)
+    // this.peers.push(peer)
+    // if (this._autoSync) {
+    //   debug('restarting sync cron jobs')
+    //   this.stopAutoSync()
+    //   this.setupSync()
+    //   this.startAutoSync()
+    // }
   }
   startAutoSync() {
     this._autoSync = true

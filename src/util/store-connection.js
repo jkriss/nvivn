@@ -3,6 +3,7 @@ const url = require('url')
 const { decode } = require('./encoding')
 
 const getStore = (connectionString, opts = {}) => {
+  debug('getting store for connection string', connectionString)
   let publicKey = opts.publicKey
   if (!publicKey) {
     publicKey = process.env.NVIVN_PUBLIC_KEY

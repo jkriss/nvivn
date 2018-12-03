@@ -18,17 +18,21 @@ class Server {
     // })
     // this.setCache = promisify(cache.set).bind(cache)
     // this.getCache = promisify(cache.get).bind(cache)
-    this.trustedKeys = opts.trustedKeys || []
+    // this.trustedKeys = opts.trustedKeys || []
+    this.config = opts.config
   }
   getPublicKey() {
     return this.publicKey
   }
-  async getTrustedKeys() {
-    const keys = [this.publicKey].concat(this.trustedKeys)
+  getTrustedKeys() {
+    const trustedKeys = this.config.data().trustedKeys
+    const keys = trustedKeys
+      ? [this.publicKey].concat(trustedKeys)
+      : [this.publicKey]
     return keys.map(k => (typeof k === 'string' ? k : encode(k)))
   }
   async isAllowed({ command, userPublicKey, message }) {
-    const trustedKeys = await this.getTrustedKeys()
+    const trustedKeys = this.getTrustedKeys()
     debug(
       'looking for',
       userPublicKey,

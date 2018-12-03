@@ -1,4 +1,4 @@
-const loadConfig = require('./config')
+const { loadConfig } = require('./config')
 const { encode } = require('./encoding')
 const Client = require('../client/index')
 const Server = require('../server/core')
@@ -7,13 +7,14 @@ const getStore = require('./store-connection')
 
 const createClientServer = async (config, clientOpts = {}) => {
   if (!config) config = await loadConfig()
-  const keys = config.keys
+  const settings = await config.json()
+  const keys = settings.keys
   const publicKey = encode(keys.publicKey)
-  const messageStore = getStore(config.messageStore, { publicKey })
+  const messageStore = getStore(settings.messageStore, { publicKey })
   // TODO change syncStore this based on config file, too
   let syncStore = new MemorySyncStore()
-  if (config.syncStore) {
-    const [type, filepath] = config.syncStore.split(':')
+  if (settings.syncStore) {
+    const [type, filepath] = settings.syncStore.split(':')
     if (type === 'file') {
       const FileSyncStore = require('../client/file-sync-store')
       syncStore = new FileSyncStore({ filepath })
@@ -26,13 +27,12 @@ const createClientServer = async (config, clientOpts = {}) => {
       messageStore,
       keys,
       syncStore,
-      peers: config.peers || [],
-      info: config.info,
+      config,
     },
     clientOpts
   )
   const client = new Client(opts)
-  const server = new Server({ client, trustedKeys: config.trustedKeys })
+  const server = new Server({ client, config })
   return { config, client, server }
 }
 
