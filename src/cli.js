@@ -34,7 +34,7 @@ Options:
 `
 
 const parse = async (docOpts = {}) => {
-  const args = docopt(doc, docOpts)
+  const args = docopt(doc, Object.assign({}, docOpts, { exit: false }))
   if (args['-'] || args.stdin) {
     args['<message>'] = await getStdin()
   }

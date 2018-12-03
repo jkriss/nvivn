@@ -91,16 +91,16 @@ class Client extends EventEmitter {
     }
     debug('checking info:', settings.info)
     if (!settings.info) settings.info = {}
-    if (!settings.info.peerId) {
-      settings.info.peerId = Math.random()
+    if (!settings.info.id) {
+      debug('no id, setting')
+      const peerId = Math.random()
         .toString(32)
         .slice(2, 8)
-      settings.info.url = `nvivn://${settings.info.peerId}${
+      settings.info.id = `${peerId}${
         settings.info.appName ? `.${settings.info.appName}` : ''
       }.${decode(this.defaultOpts.keys.publicKey).toString('hex')}.nvivn`
       config.set({ info: settings.info })
     }
-    debug('url:', config.data().info.url)
 
     config.on('change', this.setFromConfig.bind(this))
     this.config = config
