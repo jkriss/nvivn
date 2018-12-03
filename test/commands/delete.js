@@ -22,6 +22,7 @@ tap.test('soft delete, with a record', async function(t) {
   const refetchedMessage = await messageStore.get(m.meta.hash)
   t.ok(refetchedMessage)
   t.same(refetchedMessage.body, null)
+  t.same(refetchedMessage.deleted, true, 'deleted flag should now be true')
   t.equal(refetchedMessage.meta.signed.length, 2)
 })
 
@@ -50,7 +51,7 @@ tap.test('properly sync a soft delete', async function(t) {
   )
   let count = 0
   for await (const newMessage of changes) {
-    console.log('change!', newMessage)
+    // console.log('change!', newMessage)
     count++
     // sync the change to store2
     await post(newMessage, { messageStore: store2, keys: k2 })
@@ -59,6 +60,7 @@ tap.test('properly sync a soft delete', async function(t) {
   const refetchedMessage2 = await store2.get(m.meta.hash)
   t.ok(refetchedMessage2)
   t.same(refetchedMessage2.body, null)
+  t.same(refetchedMessage2.deleted, true)
 })
 
 tap.test('hard delete', async function(t) {

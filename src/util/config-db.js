@@ -48,21 +48,29 @@ const _getConfigDb = async (opts = {}) => {
       promises.push(
         new Promise((resolve, reject) => {
           const newValue = data[k]
-          // if it's an object, merge it instead of just overwriting
-          const toSave =
-            typeof newValue === 'object'
-              ? merge.recursive(true, _data[k], newValue)
-              : newValue
-          debug(`writing ${k}: ${JSON.stringify(toSave)}`)
-          db.update(
-            { _id: k },
-            { _id: k, value: toSave },
-            { upsert: true },
-            err => {
-              if (err) return reject(err)
-              resolve()
-            }
-          )
+          if (typeof newValue === 'undefined') {
+            // this is a deletion
+            db.remove({ _id: k }, {}, err => {
+              return err ? reject(err) : resolve()
+            })
+          } else {
+            // if it's an object, merge it instead of just overwriting
+            const toSave =
+              typeof newValue === 'object'
+                ? merge.recursive(true, _data[k], newValue)
+                : newValue
+            debug(`writing ${k}: ${JSON.stringify(toSave)}`)
+            const encoded = Buffer.from(JSON.stringify(toSave)).toString('hex')
+            db.update(
+              { _id: k },
+              { _id: k, value: encoded },
+              { upsert: true },
+              err => {
+                if (err) return reject(err)
+                resolve()
+              }
+            )
+          }
         })
       )
     }
@@ -74,8 +82,8 @@ const _getConfigDb = async (opts = {}) => {
       db.find({}, (err, docs) => {
         if (err) return reject(err)
         for (const doc of docs) {
-          // debug('returning entry', doc)
-          obj[doc._id] = doc.value
+          debug('returning entry', doc)
+          obj[doc._id] = JSON.parse(Buffer.from(doc.value, 'hex').toString())
         }
         // debug('returning obj:', obj)
         resolve(obj)

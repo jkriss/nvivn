@@ -100,6 +100,8 @@ class Client extends EventEmitter {
         settings.info.appName ? `.${settings.info.appName}` : ''
       }.${decode(this.defaultOpts.keys.publicKey).toString('hex')}.nvivn`
       config.set({ info: settings.info })
+      debug('set info to', config.data().info)
+      this.setFromConfig(config.data())
     }
 
     config.on('change', this.setFromConfig.bind(this))
@@ -161,13 +163,6 @@ class Client extends EventEmitter {
   addPeer(peer) {
     this.peers.push(peer)
     this.config.set('peers', this.peers)
-    // this.peers.push(peer)
-    // if (this._autoSync) {
-    //   debug('restarting sync cron jobs')
-    //   this.stopAutoSync()
-    //   this.setupSync()
-    //   this.startAutoSync()
-    // }
   }
   startAutoSync() {
     this._autoSync = true
@@ -199,17 +194,20 @@ class Client extends EventEmitter {
     return this.defaultOpts.messageStore.clear()
   }
   getSync(key) {
+    assert(key, `Can't return a sync value for an undefined key`)
+    debug('getting sync entry for', key)
     const syncs = this.config.data().syncs || {}
     return syncs[key]
   }
   setSync(key, value) {
+    assert(key, `Can't set a sync value for an undefined key`)
     const syncs = this.config.data().syncs || {}
     syncs[key] = value
     this.config.set({ syncs })
   }
   async pull({ publicKey, url }, opts = {}) {
     const serverInfo = await this.resolveServerInfo({ publicKey, url })
-    const serverKey = `${serverInfo.publicKey}:${stringify(
+    const serverKey = `${serverInfo.id}:${stringify(
       without(opts, 'transport')
     )}:pull`
     const lastPull = this.getSync(serverKey)
@@ -244,7 +242,7 @@ class Client extends EventEmitter {
   async resolveServerInfo({ publicKey, url }) {
     debug('resolving server with', publicKey, url)
     if (!publicKey && !url) throw new Error('Must provide publicKey or url')
-    let transport
+    let transport, id
     if (url) {
       transport = await this.transportGenerator({ url })
       const info = await remote({
@@ -252,6 +250,7 @@ class Client extends EventEmitter {
         opts: this.defaultOpts,
         transport,
       })
+      debug('!! got info response:', info)
       assert(
         verify(info, { all: true }),
         `info message from ${url} was not properly signed`
@@ -273,17 +272,19 @@ class Client extends EventEmitter {
         )
       }
       publicKey = info.publicKey
+      id = info.id
     } else if (publicKey && !url) {
       // TODO check local network, other lookup methods
     }
     if (!publicKey) throw new Error(`Couldn't find public key for ${url}`)
     if (!transport && url) transport = await this.transportGenerator({ url })
-    return { publicKey, url, transport }
+    return { id, transport }
   }
   async push({ publicKey, url }, opts = {}) {
     // get public key from the url, or vice versa (local discovery)
     const serverInfo = await this.resolveServerInfo({ publicKey, url })
-    const serverKey = `${serverInfo.publicKey}:${stringify(
+    debug('pushing to server info', serverInfo)
+    const serverKey = `${serverInfo.id}:${stringify(
       without(opts, 'transport')
     )}:push`
     const lastPush = this.getSync(serverKey)
@@ -347,7 +348,7 @@ class Client extends EventEmitter {
     if (this.transport) this.transport.end()
   }
   async run(command, args) {
-    debug('running', command, args)
+    // debug('running', command, args)
     if (this.transport) debug('remote transport:', this.transport)
     let result
     if (
@@ -361,7 +362,7 @@ class Client extends EventEmitter {
         transport: this.transport,
       })
     } else {
-      debug('running', command, 'with args', args)
+      // debug('running', command, 'with args', args)
       result = await commands[command](args, this.defaultOpts)
     }
     return result

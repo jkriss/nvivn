@@ -15,6 +15,7 @@ const del = async (hash, opts = {}) => {
       if (!opts.hard) {
         let deletedMessage = Object.assign({}, m)
         deletedMessage.body = null
+        deletedMessage.deleted = true
         deletedMessage = sign(deletedMessage, {
           keys: opts.keys,
           signProps: { type: 'deletion' },

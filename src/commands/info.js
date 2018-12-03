@@ -5,7 +5,8 @@ const { encode } = require('../util/encoding')
 const info = async (_, opts = {}) => {
   const data = Object.assign(
     { publicKey: encode(opts.keys.publicKey) },
-    opts.info
+    opts.info,
+    { type: 'info' }
   )
   const m = create(data)
   return sign(m, opts)
