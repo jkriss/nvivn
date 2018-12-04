@@ -1,9 +1,17 @@
+require('dotenv').config()
 const debug = require('debug')('nvivn:nvivn')
 const assert = require('assert')
 const { loadConfig } = require('../src/util/config')
 const { encode } = require('../src/util/encoding')
-const { nvivn } = require('../src/cli')
-const getStore = require('../src/util/store-connection')
+const { nvivn, parse } = require('../src/cli')
+// const getStore = require('../src/util/store-connection')
+const tcp = require('./server/tcp')
+const setup = require('./util/setup')
+const fs = require('fs-extra')
+const getStdin = require('get-stdin')
+const oyaml = require('oyaml')
+const createHttpClient = require('./client/http')
+const { sign, create } = require('./index')
 
 const getPassphrase = () => {
   const prompt = require('prompt')
@@ -27,27 +35,144 @@ const getPassphrase = () => {
 }
 
 const run = async () => {
-  const config = await loadConfig().then(db => db.data())
-  const publicKey = encode(config.keys.publicKey)
-  const messageStore = getStore(config.messageStore, { publicKey })
+  const args = await parse()
+  // console.log(args)
 
-  nvivn(undefined, { getPassphrase, messageStore })
-    .then(async result => {
-      debug('result:', result)
-      if (typeof result === 'undefined') return
-      const iterableResult =
-        typeof result !== 'string' &&
-        (result[Symbol.asyncIterator] || result[Symbol.iterator])
-          ? result
-          : [result]
-      for await (const r of iterableResult) {
-        debug('got iterated result', r)
-        process.stdout.write(
-          typeof r === 'string' ? r : JSON.stringify(r) + '\n'
-        )
+  // if it's the server command, do that the normal way
+  if (args.server) {
+    if (args['<port>']) process.env.PORT = args['<port>']
+    if (args['<socket>']) process.env.SOCKET = args['<socket>']
+    if (args['--https']) require('./server/secure')
+    else if (args['--tcp']) require('./server/standalone-tcp')
+    else require('./server/standalone-http')
+    return []
+  } else {
+    let tcpServer, transport
+    const socket = '.nvivn.sock'
+    let remote = false
+    let settings
+    // if the socket doesn't already exist, start up a local tcp server that allows everything
+    if (!args['--hub']) {
+      const exists = await fs.exists(socket)
+      if (!exists) {
+        debug("socket doesn't exist, starting server")
+        const { config, client, server } = await setup()
+        // allow everything, this is local only
+        server.trustAll = true
+        tcpServer = tcp.createServerTransport({
+          server,
+          listen: socket,
+        })
+        await tcpServer.listen()
+
+        process.on('SIGINT', function() {
+          tcpServer.close()
+          process.exit()
+        })
+      } else {
+        debug('socket exists, using server')
       }
-    })
-    .catch(console.error)
+      transport = await tcp.createClientTransport({ path: socket })
+    } else {
+      // TODO create different transports based on protocols
+      remote = true
+      settings = await loadConfig().then(c => c.data())
+      transport = await createHttpClient({ url: args['--hub'] })
+    }
+
+    // now run the command
+
+    const cleanup = () => {
+      debug('cleaning up')
+      if (tcpServer) {
+        tcpServer.close()
+      }
+      process.exit()
+    }
+
+    let command = Object.keys(args).find(
+      a => a[0].match(/[a-z]/i) && args[a] === true
+    )
+    const opts = {}
+    for (const key of Object.keys(args)) {
+      if (
+        !key[0].match(/[a-z]/i) &&
+        args[key] &&
+        (!Array.isArray(args[key]) || args[key].length > 0)
+      ) {
+        opts[key.replace(/--|[<>]/g, '')] = args[key]
+      }
+    }
+    debug(opts)
+
+    let messages
+    // debug("raw message:", opts.message, typeof opts.message)
+    if (typeof opts.message === 'string' && opts.message.includes('\n')) {
+      messages = opts.message
+        .trim()
+        .split('\n')
+        .map(JSON.parse)
+      // debug("messages now:", messages)
+    } else {
+      messages = [opts.message]
+    }
+    // debug("messages", messages)
+
+    for await (const inputMessage of messages) {
+      let messageArgs = inputMessage || opts
+      debug('messageArgs', messageArgs)
+      if (command === 'create') {
+        let message = Array.isArray(args.message)
+          ? args.message[0]
+          : args.message
+        try {
+          message = oyaml.parse(args.message.join(' '))
+        } catch (err) {
+          debug('tried to parse', message)
+          try {
+            message = JSON.parse(message)
+          } catch (err2) {}
+        }
+        messageArgs = message
+      } else if (command === 'list') {
+        messageArgs = oyaml.parse(args['<filter>'].join(' '), {
+          unflatten: false,
+        })
+      } else if (command === 'delete') {
+        command = 'del'
+      }
+
+      let message = create({ type: 'command', command, args: messageArgs })
+      if (remote) message = sign(message, { keys: settings.keys })
+      const req = transport.request(message)
+
+      await new Promise(resolve => {
+        const buffered = []
+        req.on('data', d => {
+          debug('got data', d)
+          if (command === 'verify') {
+            buffered.push(d)
+          } else {
+            console.log(JSON.stringify(d))
+          }
+        })
+        req.on('error', err => {
+          console.error('got error:', err)
+          resolve()
+        })
+        req.on('end', () => {
+          req.removeAllListeners()
+          if (command === 'verify') {
+            debug('checking to see if all things are true', buffered.length)
+            const allTrue = buffered.filter(d => d).length === buffered.length
+            if (allTrue) console.log(JSON.stringify(inputMessage))
+          }
+          resolve()
+        })
+      })
+    }
+    cleanup()
+  }
 }
 
-run()
+run().catch(console.error)

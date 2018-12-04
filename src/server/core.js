@@ -53,42 +53,48 @@ class Server {
       let result
       if (message.type === 'command') {
         debug('handling command', message.command)
-        const verificationResult = await verify(message)
-        // all signatures must pass for this to count
-        const verified =
-          message.meta &&
-          message.meta.signed &&
-          !verificationResult.find(v => v === false)
-        if (!verified) return error('signature not valid', 400)
-        debug('verified command')
-        const users = message.meta.signed.map(s => s.publicKey)
-        // are the signatures recent enough?
-        const times = message.meta.signed.map(s => s.t)
-        const oldestSignatureTime = Math.min(...times)
-        if (oldestSignatureTime < Date.now() - MAX_SIGNATURE_AGE) {
-          return error('signature is not recent enough', 401)
+        let commandAllowed
+        if (this.trustAll) {
+          debug('trusting all, command is allowed')
+          commandAllowed = true
+        } else {
+          const verificationResult = await verify(message)
+          // all signatures must pass for this to count
+          const verified =
+            message.meta &&
+            message.meta.signed &&
+            !verificationResult.find(v => v === false)
+          if (!verified) return error('signature not valid', 400)
+          debug('verified command')
+          const users = message.meta.signed.map(s => s.publicKey)
+          // are the signatures recent enough?
+          const times = message.meta.signed.map(s => s.t)
+          const oldestSignatureTime = Math.min(...times)
+          if (oldestSignatureTime < Date.now() - MAX_SIGNATURE_AGE) {
+            return error('signature is not recent enough', 401)
+          }
+          // have we already processed this hash within the acceptable time frame?
+          // const recentlyRun = await this.getCache(message.meta.hash)
+          // if (recentlyRun) {
+          //   return error('command has already been run', 400)
+          // }
+          debug('command run by', users)
+          // const trueResults = users
+          //   .map(u => this.isAllowed({ command: message.command, userPublicKey: u, message }))
+          //   .filter(result => result === true)
+          const trueResults = []
+          for await (const u of users) {
+            const allowed = await this.isAllowed({
+              command: message.command,
+              userPublicKey: u,
+              message,
+            })
+            if (allowed) trueResults.push(true)
+          }
+          debug('trueResults:', trueResults, 'users length', users.length)
+          commandAllowed = trueResults.length === users.length
+          debug('command allowed?', commandAllowed)
         }
-        // have we already processed this hash within the acceptable time frame?
-        // const recentlyRun = await this.getCache(message.meta.hash)
-        // if (recentlyRun) {
-        //   return error('command has already been run', 400)
-        // }
-        debug('command run by', users)
-        // const trueResults = users
-        //   .map(u => this.isAllowed({ command: message.command, userPublicKey: u, message }))
-        //   .filter(result => result === true)
-        const trueResults = []
-        for await (const u of users) {
-          const allowed = await this.isAllowed({
-            command: message.command,
-            userPublicKey: u,
-            message,
-          })
-          if (allowed) trueResults.push(true)
-        }
-        debug('trueResults:', trueResults, 'users length', users.length)
-        const commandAllowed = trueResults.length === users.length
-        debug('command allowed?', commandAllowed)
         if (!commandAllowed) {
           return error(`not allowed to run ${message.command}`)
         } else {

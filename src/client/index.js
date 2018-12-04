@@ -322,14 +322,14 @@ class Client extends EventEmitter {
     if (!transport && url) transport = await this.transportGenerator({ url })
     return { id, transport }
   }
-  async push({ publicKey, url }, opts = {}) {
+  async push({ publicKey, url, all }, opts = {}) {
     // get public key from the url, or vice versa (local discovery)
     const serverInfo = await this.resolveServerInfo({ publicKey, url })
     debug('pushing to server info', serverInfo)
     const serverKey = `${serverInfo.id}:${stringify(
       without(opts, 'transport')
     )}:push`
-    const lastPush = this.getSync(serverKey)
+    const lastPush = all ? undefined : this.getSync(serverKey)
     debug('last push', lastPush)
     const start = Date.now() - 1
     const results = await this.list({ since: lastPush })
@@ -405,8 +405,9 @@ class Client extends EventEmitter {
       })
     } else {
       // debug('running', command, 'with args', args)
-      assert(commands[command], `${command} is not a known command`)
-      result = await commands[command](args, this.defaultOpts)
+      const fn = commands[command] || this[command].bind(this)
+      assert(fn, `${command} is not a known command`)
+      result = await fn(args, this.defaultOpts)
     }
     return result
   }

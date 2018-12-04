@@ -24,7 +24,7 @@ Usage:
   nvivn server [--port <port>] [--tcp] [--http] [--https] [--socket <socket>]
   nvivn info [options]
   nvivn sync [--url <url>] [--key <key>]
-  nvivn push [--url <url>] [--key <key>]
+  nvivn push [--url <url>] [--key <key>] [--all]
   nvivn pull [--url <url>] [--key <key>]
   nvivn announce [options] [<field>...]
   nvivn lookup [--publicKey <publicKey>] [--id <id>] [--domain <domain>]

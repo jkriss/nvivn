@@ -7,8 +7,11 @@ const run = async () => {
   const { config, client, server } = await setup()
   if (config.info && config.info.greeting) console.log(config.info.greeting)
 
-  const port = process.env.PORT || 4444
-  const socket = process.env.SOCKET
+  const port = process.env.PORT
+  const socket = process.env.SOCKET || '.nvivn.sock'
+  if (socket) {
+    server.trustAll = true
+  }
 
   const tcpServer = tcp.createServerTransport({
     server,

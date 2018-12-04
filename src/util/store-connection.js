@@ -34,6 +34,8 @@ const getStore = (connectionString, opts = {}) => {
   } else if (type === 'nedb') {
     const NedbStore = require('../stores/nedb')
     store = new NedbStore({ filename: pathname, autoload: true, publicKey })
+  } else {
+    throw new Error(`Don't know how to make a store of type ${type}`)
   }
   return store
 }
