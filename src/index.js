@@ -6,6 +6,8 @@ const verify = require('./commands/verify')
 const del = require('./commands/delete')
 const list = require('./commands/list')
 const info = require('./commands/info')
+const announce = require('./commands/announce')
+const lookup = require('./commands/lookup')
 
 module.exports = {
   create,
@@ -16,4 +18,6 @@ module.exports = {
   del,
   list,
   info,
+  announce,
+  lookup,
 }

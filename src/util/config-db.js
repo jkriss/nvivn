@@ -55,10 +55,16 @@ const _getConfigDb = async (opts = {}) => {
             })
           } else {
             // if it's an object, merge it instead of just overwriting
-            const toSave =
+            let toSave =
               typeof newValue === 'object'
                 ? merge.recursive(true, _data[k], newValue)
                 : newValue
+            if (Array.isArray(newValue))
+              toSave = merge.recursive(
+                true,
+                { list: _data[k] || [] },
+                { list: newValue }
+              ).list
             debug(`writing ${k}: ${JSON.stringify(toSave)}`)
             const encoded = Buffer.from(JSON.stringify(toSave)).toString('hex')
             db.update(
@@ -82,7 +88,7 @@ const _getConfigDb = async (opts = {}) => {
       db.find({}, (err, docs) => {
         if (err) return reject(err)
         for (const doc of docs) {
-          debug('returning entry', doc)
+          // debug('returning entry', doc)
           obj[doc._id] = JSON.parse(Buffer.from(doc.value, 'hex').toString())
         }
         // debug('returning obj:', obj)

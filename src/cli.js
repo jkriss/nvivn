@@ -26,6 +26,8 @@ Usage:
   nvivn sync [--url <url>] [--key <key>]
   nvivn push [--url <url>] [--key <key>]
   nvivn pull [--url <url>] [--key <key>]
+  nvivn announce [options] [<field>...]
+  nvivn lookup [--publicKey <publicKey>] [--id <id>] [--domain <domain>]
 Options:
   --type <type>   Type of signature
   --hub <hub>     Communicate with a remote hub.
@@ -138,6 +140,19 @@ const run = async (args, passedOpts) => {
     debug('returning info')
     // result = await info(null, opts)
     result = await client.info()
+  } else if (args.announce) {
+    debug('creating an announce message')
+    const messageArgs = oyaml.parse(args['<field>'].join(' '), {
+      unflatten: false,
+    })
+    result = await client.announce(messageArgs)
+  } else if (args.lookup) {
+    debug('looking up an annoucement')
+    result = await client.lookup({
+      publicKey: args['<publicKey>'],
+      id: args['<id>'],
+      domain: args['<domain>'],
+    })
   }
   return result
 }

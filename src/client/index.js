@@ -9,6 +9,8 @@ const {
   postMany,
   info,
   verify,
+  announce,
+  lookup,
 } = require('../index')
 const { encode, decode } = require('../util/encoding')
 const sortBy = require('lodash.sortby')
@@ -38,6 +40,8 @@ const commands = {
     return allResults
   },
   verify,
+  announce,
+  lookup,
 }
 
 async function remote({ command, args, transport, opts }) {
@@ -88,25 +92,27 @@ class Client extends EventEmitter {
       messageStore,
       skipValidation,
       info: settings.info,
+      config,
     }
+    this.config = config
+    this.crons = {}
     debug('checking info:', settings.info)
     if (!settings.info) settings.info = {}
-    if (!settings.info.id) {
+    if (!settings.info.nodeId) {
       debug('no id, setting')
-      const peerId = Math.random()
+      const nodeId = Math.random()
         .toString(32)
         .slice(2, 8)
-      settings.info.id = `${peerId}${
+      settings.info.id = `${nodeId}${
         settings.info.appName ? `.${settings.info.appName}` : ''
       }.${decode(this.defaultOpts.keys.publicKey).toString('hex')}.nvivn`
+      settings.info.nodeId = nodeId
       config.set({ info: settings.info })
       debug('set info to', config.data().info)
       this.setFromConfig(config.data())
     }
 
     config.on('change', this.setFromConfig.bind(this))
-    this.config = config
-    this.crons = {}
     this.transportGenerator = transportGenerator || createHttpClient
     ;[
       'create',
@@ -117,6 +123,8 @@ class Client extends EventEmitter {
       'del',
       'info',
       'verify',
+      'announce',
+      'lookup',
     ].forEach(c => {
       this[c] = (args = {}, opts = {}) => {
         if (this.transport) {
@@ -174,6 +182,40 @@ class Client extends EventEmitter {
     this._autoSync = false
     for (const job of Object.values(this.crons)) {
       job.stop()
+    }
+  }
+  startAnnouncing({ connect, interval } = {}) {
+    if (!connect) connect = this.config.data().info.connect
+    assert(connect, `'connect' option must be specified`)
+    if (!interval) interval = 60 * 60 * 1000 // one hour
+    const announceFn = () => {
+      debug('announcing...')
+      this.announce({ expr: Date.now() + interval * 2 })
+        .then(this.post)
+        .then(() => debug('posted announcement message for', connect))
+    }
+    this.stopAnnouncing()
+    this.announcementInterval = setInterval(announceFn, interval)
+    // if there's an active announce that's still correct, don't need to fire one off right away
+    this.lookup({ id: this.defaultOpts.info.id }).then(announcements => {
+      const announcement = announcements[0]
+      const lastsLongEnough =
+        announcement && announcement.expr > Date.now() + interval
+      const sameInfo =
+        announcement && stringify(connect) === stringify(announcement.connect)
+      debug('lastsLongEnough?', lastsLongEnough)
+      debug('sameInfo?', sameInfo)
+      if (lastsLongEnough && sameInfo) {
+        debug('already a valid announcement hanging around')
+      } else {
+        debug('no record new enough, announcing')
+        announceFn()
+      }
+    })
+  }
+  stopAnnouncing() {
+    if (this.announcementInterval) {
+      clearInterval(this.announcementInterval)
     }
   }
   async signCommand({ command, args }) {
@@ -363,6 +405,7 @@ class Client extends EventEmitter {
       })
     } else {
       // debug('running', command, 'with args', args)
+      assert(commands[command], `${command} is not a known command`)
       result = await commands[command](args, this.defaultOpts)
     }
     return result
