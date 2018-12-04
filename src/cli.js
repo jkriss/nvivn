@@ -21,11 +21,11 @@ Usage:
   nvivn delete [options] <hash> [--hard]
   nvivn verify (--stdin | - | <message>)
   nvivn list [options] [--new] [<filter>...]
-  nvivn server [--port <port>] [--tcp] [--http] [--https] [--socket <socket>]
+  nvivn server [--tcp] [--http] [--https] [--port=<port>] [--socket=<socket>] [--custom=<custom>]
   nvivn info [options]
-  nvivn sync [--url <url>] [--key <key>]
-  nvivn push [--url <url>] [--key <key>]
-  nvivn pull [--url <url>] [--key <key>]
+  nvivn sync [--url=<url>] [--key=<key>]
+  nvivn push [--url=<url>] [--key=<key>]
+  nvivn pull [--url=<url>] [--key=<key>]
   nvivn announce [options] [<field>...]
   nvivn lookup [--publicKey <publicKey>] [--id <id>] [--domain <domain>]
 Options:
@@ -56,8 +56,11 @@ const run = async (args, passedOpts) => {
   debug('args:', args)
 
   if (args.server) {
-    if (args['<port>']) process.env.PORT = args['<port>']
-    if (args['<socket>']) process.env.SOCKET = args['<socket>']
+    if (args['--port']) process.env.PORT = args['--port']
+    if (args['--socket']) process.env.SOCKET = args['--socket']
+    if (args['--custom']) {
+      process.env.CUSTOM_LOGIC = args['--custom']
+    }
     if (args['--https']) require('./server/secure')
     else if (args['--tcp']) require('./server/standalone-tcp')
     else require('./server/standalone-http')
@@ -71,8 +74,8 @@ const run = async (args, passedOpts) => {
   const { client } = await setup(config)
 
   if (['sync', 'push', 'pull'].includes(command)) {
-    const url = args['<url>']
-    const publicKey = args['<key>']
+    const url = args['--url']
+    const publicKey = args['--key']
     const server = (url || publicKey) && { url, publicKey }
     const syncResult = await client[command](server)
     return syncResult
