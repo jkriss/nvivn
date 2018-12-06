@@ -106,7 +106,7 @@ const run = async () => {
     debug(opts)
 
     let messages
-    // debug("raw message:", opts.message, typeof opts.message)
+    debug('raw message:', opts.message, typeof opts.message)
     if (typeof opts.message === 'string' && opts.message.includes('\n')) {
       messages = opts.message
         .trim()
@@ -116,21 +116,20 @@ const run = async () => {
     } else {
       messages = [opts.message]
     }
-    // debug("messages", messages)
+    debug('messages', messages)
 
     for await (const inputMessage of messages) {
       let messageArgs = inputMessage || opts
       debug('messageArgs', messageArgs)
       if (command === 'create') {
-        let message = Array.isArray(args.message)
-          ? args.message[0]
-          : args.message
+        debug('creating with message:', messageArgs)
+        let message = Array.isArray(messageArgs) ? messageArgs[0] : messageArgs
         try {
-          message = oyaml.parse(args.message.join(' '))
+          message = oyaml.parse(messageArgs.join(' '))
         } catch (err) {
-          debug('tried to parse', message)
+          debug('tried to parse', messageArgs)
           try {
-            message = JSON.parse(message)
+            message = JSON.parse(messageArgs)
           } catch (err2) {}
         }
         messageArgs = message
