@@ -20,6 +20,11 @@ class Server {
     // this.getCache = promisify(cache.get).bind(cache)
     // this.trustedKeys = opts.trustedKeys || []
     this.config = opts.config
+    // load the custom logic stuff
+  }
+  setCustomLogic(customLogic) {
+    if (customLogic && customLogic.isAllowed)
+      this.isAllowed = customLogic.isAllowed
   }
   getPublicKey() {
     return this.publicKey
@@ -84,12 +89,18 @@ class Server {
           //   .filter(result => result === true)
           const trueResults = []
           for await (const u of users) {
-            const allowed = await this.isAllowed({
-              command: message.command,
-              userPublicKey: u,
-              message,
-            })
-            if (allowed) trueResults.push(true)
+            try {
+              const allowed = await this.isAllowed({
+                command: message.command,
+                userPublicKey: u,
+                trustedKeys: this.getTrustedKeys(),
+                message,
+                settings: this.config.data(),
+              })
+              if (allowed) trueResults.push(true)
+            } catch (err) {
+              return error(err.message, 403)
+            }
           }
           debug('trueResults:', trueResults, 'users length', users.length)
           commandAllowed = trueResults.length === users.length
@@ -101,6 +112,7 @@ class Server {
           // this.setCache(message.meta.hash, true)
           result = await this.client.run(message.command, message.args)
           debug('got result', result)
+          if (typeof result === 'undefined') result = []
         }
       } else {
         return error(
