@@ -40,11 +40,11 @@ const run = async () => {
 
   // if it's the server command, do that the normal way
   if (args.server) {
-    if (args['<port>']) process.env.PORT = args['<port>']
-    if (args['<socket>']) process.env.SOCKET = args['<socket>']
-    if (args['--https']) require('./server/secure')
-    if (args['--custom']) process.env.CUSTOM_LOGIC = args['<custom>']
-    else if (args['--tcp']) require('./server/standalone-tcp')
+    if (args['--port']) process.env.PORT = args['--port']
+    if (args['--socket']) process.env.SOCKET = args['--socket']
+    if (args['--custom']) process.env.CUSTOM_LOGIC = args['--custom']
+    if (args['--tcp']) require('./server/standalone-tcp')
+    else if (args['--https']) require('./server/secure')
     else require('./server/standalone-http')
     return []
   } else {

@@ -37,6 +37,7 @@ Options:
 
 const parse = async (docOpts = {}) => {
   const args = docopt(doc, Object.assign({}, docOpts, { exit: false }))
+  debug('args:', args)
   if (args['-'] || args.stdin) {
     args['<message>'] = await getStdin()
   }

@@ -8,13 +8,13 @@ const internalIp = require('internal-ip')
 const path = require('path')
 
 const port = process.env.PORT || 3000
-let customLogic
-try {
-  customLogic = process.env.CUSTOM_LOGIC && require(process.env.CUSTOM_LOGIC)
-} catch (err) {
-  customLogic = require(path.join(process.cwd(), process.env.CUSTOM_LOGIC))
-} finally {
-  console.log('custom logic?', process.env.CUSTOM_LOGIC, customLogic)
+if (process.env.CUSTOM_LOGIC) {
+  try {
+    customLogic = require(process.env.CUSTOM_LOGIC)
+  } catch (err) {
+    customLogic = require(path.join(process.cwd(), process.env.CUSTOM_LOGIC))
+  }
+  server.setCustomLogic(customLogic)
 }
 
 const createHandler = async () => {
