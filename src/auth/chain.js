@@ -4,6 +4,7 @@ const chain = (...customLogicObjs) => {
     isAllowed: async function({ command, userPublicKey, trustedKeys }) {
       let result
       for (const customLogic of customLogicObjs) {
+        if (!customLogic.isAllowed) continue
         console.log('running custom logic:', customLogic)
         result = await customLogic.isAllowed.bind(this)({
           command,
@@ -13,6 +14,11 @@ const chain = (...customLogicObjs) => {
         if (result === false) break
       }
       return result
+    },
+    ready: server => {
+      for (const customLogic of customLogicObjs) {
+        if (customLogic.ready) customLogic.ready(server)
+      }
     },
   }
 }

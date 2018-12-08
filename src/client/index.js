@@ -408,6 +408,9 @@ class Client extends EventEmitter {
       const fn = commands[command] || this[command].bind(this)
       assert(fn, `${command} is not a known command`)
       result = await fn(args, this.defaultOpts)
+      if (command === 'post' && result) {
+        this.emit('message', result)
+      }
     }
     return result
   }

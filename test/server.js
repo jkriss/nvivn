@@ -287,4 +287,23 @@ tap.test(
   }
 )
 
+tap.test(`let custom handlers get events`, function(t) {
+  t.plan(2)
+  const custom = {
+    ready: server => {
+      t.ok(server)
+      server.on('message', m => {
+        t.ok(m)
+      })
+    },
+  }
+  createServer().then(server => {
+    server.setCustomLogic(custom)
+    const c = server.client
+    c.create({ body: 'hi' })
+      .then(c.sign)
+      .then(c.post)
+  })
+})
+
 // // TODO verify signature of the info message and make sure the public key is the one that's signed

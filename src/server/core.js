@@ -6,10 +6,12 @@ const MAX_SIGNATURE_AGE = 30 * 1000 // 30 seconds
 const { promisify } = require('es6-promisify')
 const EventEmitter = require('events')
 
-class Server {
+class Server extends EventEmitter {
   constructor(opts = {}) {
+    super()
     if (!opts.client) throw new Error('Must provide client object')
     this.client = opts.client
+    this.client.on('message', m => this.emit('message', m))
     this.publicKey = opts.client.getPublicKey()
     const maxSignatureAge = opts.maxSignatureAge || MAX_SIGNATURE_AGE
     // const cache = new NodeCache({
@@ -24,8 +26,14 @@ class Server {
   }
   setCustomLogic(customLogic) {
     debug('setting custom logic')
-    if (customLogic && customLogic.isAllowed)
-      this.isAllowed = customLogic.isAllowed.bind(this)
+    if (customLogic) {
+      if (customLogic.isAllowed) {
+        this.isAllowed = customLogic.isAllowed.bind(this)
+      }
+      if (customLogic.ready) {
+        customLogic.ready(this)
+      }
+    }
   }
   getPublicKey() {
     return this.publicKey
