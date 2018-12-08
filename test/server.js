@@ -1,8 +1,4 @@
 const tap = require('tap')
-const signatures = require('sodium-signatures')
-const Client = require('../src/client/index')
-const Server = require('../src/server/core')
-const MemoryStore = require('../src/stores/memory')
 const tcp = require('../src/server/tcp')
 const createHttpServer = require('../src/server/http')
 const createHttpClient = require('../src/client/http')
@@ -10,29 +6,11 @@ const createInProcessTransport = require('../src/server/in-process')
 const { encode } = require('../src/util/encoding')
 const fs = require('fs-extra')
 const sleep = require('await-sleep')
-const { getConfigDb } = require('../src/util/config-db')
-
-const createClient = async ({ keys } = {}) => {
-  if (!keys) keys = signatures.keyPair()
-  const messageStore = new MemoryStore({ publicKey: encode(keys.publicKey) })
-  const config = await getConfigDb()
-  return new Client({ messageStore, keys, config })
-}
-
-const createServer = async (opts = {}) => {
-  if (!opts.keys) opts.keys = signatures.keyPair()
-  const client = await createClient({ keys: opts.keys })
-  const config = await getConfigDb({ data: { trustedKeys: opts.trustedKeys } })
-  if (!opts.config) opts.config = config
-  return new Server(Object.assign({ client }, opts))
-}
-
-const createServerClientPair = async () => {
-  const keys = signatures.keyPair()
-  const server = await createServer({ trustedKeys: [encode(keys.publicKey)] })
-  const client = await createClient({ keys })
-  return { server, client }
-}
+const {
+  createClient,
+  createServer,
+  createServerClientPair,
+} = require('./helpers')
 
 tap.test(`don't allow access by untrusted keys`, async function(t) {
   t.plan(1)

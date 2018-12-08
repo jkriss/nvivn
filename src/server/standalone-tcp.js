@@ -9,9 +9,6 @@ const run = async () => {
 
   const port = process.env.PORT
   const socket = process.env.SOCKET || '.nvivn.sock'
-  if (socket) {
-    server.trustAll = true
-  }
 
   const tcpServer = tcp.createServerTransport({
     server,

@@ -23,6 +23,7 @@ class Server {
     // load the custom logic stuff
   }
   setCustomLogic(customLogic) {
+    debug('setting custom logic')
     if (customLogic && customLogic.isAllowed)
       this.isAllowed = customLogic.isAllowed
   }
@@ -107,7 +108,7 @@ class Server {
           debug('command allowed?', commandAllowed)
         }
         if (!commandAllowed) {
-          return error(`not allowed to run ${message.command}`)
+          return error(`not allowed to run ${message.command}`, 403)
         } else {
           // this.setCache(message.meta.hash, true)
           result = await this.client.run(message.command, message.args)
