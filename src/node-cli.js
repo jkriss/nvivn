@@ -43,6 +43,7 @@ const run = async () => {
     if (args['<port>']) process.env.PORT = args['<port>']
     if (args['<socket>']) process.env.SOCKET = args['<socket>']
     if (args['--https']) require('./server/secure')
+    if (args['--custom']) process.env.CUSTOM_LOGIC = args['<custom>']
     else if (args['--tcp']) require('./server/standalone-tcp')
     else require('./server/standalone-http')
     return []

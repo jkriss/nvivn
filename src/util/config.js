@@ -25,7 +25,7 @@ const loadConfig = async filename => {
     const k = keys.generate()
     const yamlConfig = yaml.safeDump({
       keys: k,
-      messageStore: 'file:./messages',
+      messageStore: 'leveldb:./messages.db',
     })
     await fs.writeFile(filename, `---\n${yamlConfig}---\n`)
   }
