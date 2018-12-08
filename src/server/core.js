@@ -25,7 +25,7 @@ class Server {
   setCustomLogic(customLogic) {
     debug('setting custom logic')
     if (customLogic && customLogic.isAllowed)
-      this.isAllowed = customLogic.isAllowed
+      this.isAllowed = customLogic.isAllowed.bind(this)
   }
   getPublicKey() {
     return this.publicKey
