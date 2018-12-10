@@ -12,6 +12,7 @@ class Server extends EventEmitter {
     if (!opts.client) throw new Error('Must provide client object')
     this.client = opts.client
     this.client.on('message', m => this.emit('message', m))
+    this.client.on('settingsChange', s => this.emit('settingsChange', s))
     this.publicKey = opts.client.getPublicKey()
     const maxSignatureAge = opts.maxSignatureAge || MAX_SIGNATURE_AGE
     // const cache = new NodeCache({
@@ -28,6 +29,7 @@ class Server extends EventEmitter {
     debug('setting custom logic')
     if (customLogic) {
       if (customLogic.isAllowed) {
+        // TODO chain these instead of replacing
         this.isAllowed = customLogic.isAllowed.bind(this)
       }
       if (customLogic.ready) {

@@ -14,14 +14,13 @@ if (process.env.CUSTOM_LOGIC) {
   } catch (err) {
     customLogic = require(path.join(process.cwd(), process.env.CUSTOM_LOGIC))
   }
-  server.setCustomLogic(customLogic)
 }
 
 const createHandler = async () => {
   const { config, client, server } = await setup()
-  server.setCustomLogic(customLogic)
   const ip = await internalIp.v4()
   config.set({ info: { connect: { url: `http://${ip}:${port}` } } })
+  server.setCustomLogic(customLogic)
   client.startAutoSync()
   const { info } = config.data()
   if (info && info.greeting) console.log(info.greeting)

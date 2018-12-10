@@ -96,6 +96,7 @@ class Client extends EventEmitter {
     }
     this.config = config
     this.crons = {}
+    this.peerUrls = {}
     debug('checking info:', settings.info)
     if (!settings.info) settings.info = {}
     if (!settings.info.nodeId) {
@@ -147,6 +148,14 @@ class Client extends EventEmitter {
     } else {
       this.setupSync()
     }
+    this.emit('configChange', config)
+  }
+  setPeerUrl({ publicKey, id, url }) {
+    debug(`setting peer ${id} with publicKey ${publicKey} to ${url}`)
+    this.peerUrls[id] = { url, publicKey, id }
+  }
+  clearPeerUrls() {
+    this.peerUrls = {}
   }
   setupSync() {
     for (const peer of this.peers) {
@@ -248,7 +257,18 @@ class Client extends EventEmitter {
     this.config.set({ syncs })
   }
   async pull({ publicKey, url }, opts = {}) {
-    const serverInfo = await this.resolveServerInfo({ publicKey, url })
+    let serverInfo
+    try {
+      serverInfo = await this.resolveServerInfo({ publicKey, url })
+    } catch (err) {
+      return console.error('Error resolving peer info', err.message)
+    }
+    assert(
+      serverInfo.id,
+      `Must have an id for the server (${[publicKey, url]
+        .filter(d => !!d)
+        .join(', ')})`
+    )
     const serverKey = `${serverInfo.id}:${stringify(
       without(opts, 'transport')
     )}:pull`
@@ -281,11 +301,11 @@ class Client extends EventEmitter {
     this.emit('pulled', pullResult)
     return pullResult
   }
-  async resolveServerInfo({ publicKey, url }) {
-    debug('resolving server with', publicKey, url)
+  async resolveServerInfo({ publicKey, id, url }) {
+    debug('resolving server with', publicKey, url, id)
     if (!publicKey && !url) throw new Error('Must provide publicKey or url')
-    let transport, id
-    if (url) {
+    let transport
+    if (url && !id) {
       transport = await this.transportGenerator({ url })
       const info = await remote({
         command: 'info',
@@ -316,15 +336,29 @@ class Client extends EventEmitter {
       publicKey = info.publicKey
       id = info.id
     } else if (publicKey && !url) {
-      // TODO check local network, other lookup methods
+      // this could return multiples. just find the first for now.
+      const peer = Object.values(this.peerUrls).find(
+        p => p.publicKey === publicKey
+      )
+      if (peer) {
+        url = peer.url
+        id = peer.id
+        debug(`Found url ${url} from public key ${publicKey}`)
+      }
     }
     if (!publicKey) throw new Error(`Couldn't find public key for ${url}`)
+    if (!url) throw new Error(`Couldn't find url for ${publicKey}`)
     if (!transport && url) transport = await this.transportGenerator({ url })
     return { id, transport }
   }
   async push({ publicKey, url, all }, opts = {}) {
     // get public key from the url, or vice versa (local discovery)
-    const serverInfo = await this.resolveServerInfo({ publicKey, url })
+    let serverInfo
+    try {
+      serverInfo = await this.resolveServerInfo({ publicKey, url })
+    } catch (err) {
+      return console.error('Error resolving peer info', err.message)
+    }
     debug('pushing to server info', serverInfo)
     const serverKey = `${serverInfo.id}:${stringify(
       without(opts, 'transport')
