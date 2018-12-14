@@ -11,6 +11,7 @@ class LocalstorageConfig extends LayeredConfig {
       // save out the new version
       const layer = this._getLayer(layerName)
       assert(layer, `Should have a layer called ${layerName}`)
+      if (layer.write === false) return
       this.write(layer)
     })
   }

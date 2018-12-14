@@ -1,8 +1,10 @@
+const debug = require('debug')('nvivn:config:file')
 const LayeredConfig = require('./layered-config')
 const fs = require('fs-extra')
 const path = require('path')
 const yaml = require('js-yaml')
 const assert = require('assert')
+const yamlConfig = require('../util/yaml-config')
 
 class FileConfig extends LayeredConfig {
   constructor(opts) {
@@ -24,6 +26,8 @@ class FileConfig extends LayeredConfig {
       // save out the new version
       const layer = this._getLayer(layerName)
       assert(layer, `Should have a layer called ${layerName}`)
+      if (layer.write === false) return
+      if (!layer.file) layer.file = layer.name
       this.write(layer)
         .then(() => this.emit('saved', layerName))
         .catch(err => this.emit('error', `Error saving ${layerName}: ${err}`))
@@ -31,7 +35,10 @@ class FileConfig extends LayeredConfig {
     this.loadAll()
   }
   getPath(layer) {
-    return path.join(this.path, layer.file)
+    debug('checking layer path', layer.file, layer)
+    return path.isAbsolute(layer.file)
+      ? layer.file
+      : path.join(this.path, layer.file)
   }
   getPathByName(layerName) {
     const layer = this._getLayer(layerName)
@@ -41,25 +48,27 @@ class FileConfig extends LayeredConfig {
     const fullPath = this.getPath(layer)
     const data = this.data(layer.name)
     let str
-    if (layer.ext === '.json') {
-      str = JSON.stringify(data, null, 2)
-    } else if (layer.ext.match(/\.ya?ml/)) {
+    if (layer.ext && layer.ext.match(/\.ya?ml/)) {
       str = yaml.safeDump(data)
+    } else {
+      str = JSON.stringify(data, null, 2)
     }
     return fs.ensureFile(fullPath).then(() => fs.writeFile(fullPath, str))
   }
   load(layer) {
     const fullPath = this.getPath(layer)
+    debug('loading', layer, fullPath)
     return fs
       .readFile(fullPath, 'utf8')
       .then(fileData => {
+        debug('got file data', fileData)
         let data
-        if (layer.ext === '.json') {
+        if (layer.ext && layer.ext.match(/\.ya?ml/)) {
+          data = yamlConfig(fileData)
+        } else {
           data = JSON.parse(fileData)
-        } else if (layer.ext.match(/\.ya?ml/)) {
-          data = yaml.safeLoad(fileData)
         }
-        assert(data, 'Config layer must be json or yaml')
+        debug(`loaded layer ${layer.name}`, data)
         this.set(layer.name, data, { force: true, silent: true })
       })
       .catch(err => {

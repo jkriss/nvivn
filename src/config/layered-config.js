@@ -1,4 +1,5 @@
 const merge = require('merge')
+const assert = require('assert')
 const EventEmitter = require('events')
 
 class Config extends EventEmitter {
@@ -22,6 +23,10 @@ class Config extends EventEmitter {
     }
   }
   set(layerName, data, opts = {}) {
+    assert(
+      typeof data === 'object',
+      `data must be an object, not a ${typeof data}`
+    )
     let layer = this._getLayer(layerName)
     if (!layer) {
       this.layers.push({ name: layerName, data: {} })
