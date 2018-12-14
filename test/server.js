@@ -87,7 +87,9 @@ tap.test(`pull from a server`, async function(t) {
   const server = await createServer()
   const client = server.client
   const otherClient = await createClient()
-  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
+  server.config.set('newlayer', {
+    trustedKeys: otherClient.defaultOpts.keys.publicKey,
+  })
   for (let i = 0; i < 5; i++) {
     const posted = await client
       .create({ body: `hi ${i + 1}` })
@@ -119,7 +121,9 @@ tap.test(`push to a server`, async function(t) {
   const server = await createServer()
   const client = server.client
   const otherClient = await createClient()
-  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
+  server.config.set('newlayer', {
+    trustedKeys: otherClient.defaultOpts.keys.publicKey,
+  })
   for (let i = 0; i < 5; i++) {
     const posted = await otherClient
       .create({ body: `hi ${i + 1}` })
@@ -144,7 +148,9 @@ tap.test(`sync both ways`, async function(t) {
   const server = await createServer()
   const client = server.client
   const otherClient = await createClient()
-  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
+  server.config.set('newlayer', {
+    trustedKeys: otherClient.defaultOpts.keys.publicKey,
+  })
   for (let i = 0; i < 2; i++) {
     const posted = await client
       .create({ body: `hi ${i + 1}` })
@@ -176,7 +182,9 @@ tap.test(`sync both ways over http by url`, async function(t) {
   const port = 9898
   const httpServer = createHttpServer({ server })
   await httpServer.listen(port)
-  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
+  server.config.set('newlayer', {
+    trustedKeys: otherClient.defaultOpts.keys.publicKey,
+  })
   for (let i = 0; i < 2; i++) {
     const posted = await client
       .create({ body: `hi ${i + 1}` })
@@ -210,7 +218,9 @@ tap.test(`sync a delete even if the hash has been seen already`, async function(
   const server = await createServer()
   const client = server.client
   const otherClient = await createClient()
-  server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
+  server.config.set('newlayer', {
+    trustedKeys: otherClient.defaultOpts.keys.publicKey,
+  })
   const m = await otherClient
     .create({ body: 'hi' })
     .then(otherClient.sign)
@@ -269,7 +279,9 @@ tap.test(
     const port = 9898
     const httpServer = createHttpServer({ server })
     await httpServer.listen(port)
-    server.config.set({ trustedKeys: otherClient.defaultOpts.keys.publicKey })
+    server.config.set('newlayer', {
+      trustedKeys: otherClient.defaultOpts.keys.publicKey,
+    })
     try {
       await otherClient.pull({
         publicKey: 'notthekey',

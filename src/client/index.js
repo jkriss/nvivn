@@ -99,21 +99,7 @@ class Client extends EventEmitter {
     this.peerUrls = {}
     debug('checking info:', settings.info)
     if (!settings.info) settings.info = {}
-    if (!settings.info.nodeId) {
-      debug('no id, setting')
-      const nodeId = Math.random()
-        .toString(32)
-        .slice(2, 8)
-      settings.info.id = `${nodeId}${
-        settings.info.appName ? `.${settings.info.appName}` : ''
-      }.${decode(this.defaultOpts.keys.publicKey).toString('hex')}.nvivn`
-      settings.info.nodeId = nodeId
-      config.set({ info: settings.info })
-      debug('set info to', config.data().info)
-      this.setFromConfig(config.data())
-    }
-
-    config.on('change', this.setFromConfig.bind(this))
+    config.on('peers:change', () => this.setFromConfig(config.data()))
     this.transportGenerator = transportGenerator || createHttpClient
     ;[
       'create',
@@ -179,7 +165,7 @@ class Client extends EventEmitter {
   }
   addPeer(peer) {
     this.peers.push(peer)
-    this.config.set('peers', this.peers)
+    this.config.set('peers', { peers: this.peers })
   }
   startAutoSync() {
     this._autoSync = true
@@ -254,15 +240,15 @@ class Client extends EventEmitter {
     assert(key, `Can't set a sync value for an undefined key`)
     const syncs = this.config.data().syncs || {}
     syncs[key] = value
-    this.config.set({ syncs })
+    this.config.set('syncs', { syncs })
   }
   async pull({ publicKey, url }, opts = {}) {
-    let serverInfo
-    try {
-      serverInfo = await this.resolveServerInfo({ publicKey, url })
-    } catch (err) {
-      return console.error('Error resolving peer info', err.message)
-    }
+    const serverInfo = await this.resolveServerInfo({
+      publicKey,
+      url,
+      transport: opts.transport,
+    })
+    console.log('got server info:', serverInfo)
     assert(
       serverInfo.id,
       `Must have an id for the server (${[publicKey, url]
@@ -301,12 +287,12 @@ class Client extends EventEmitter {
     this.emit('pulled', pullResult)
     return pullResult
   }
-  async resolveServerInfo({ publicKey, id, url }) {
+  async resolveServerInfo({ publicKey, id, url, transport }) {
     debug('resolving server with', publicKey, url, id)
     if (!publicKey && !url) throw new Error('Must provide publicKey or url')
-    let transport
-    if (url && !id) {
-      transport = await this.transportGenerator({ url })
+    try {
+      if (!transport)
+        transport = await this.transportGenerator({ publicKey, id, url })
       const info = await remote({
         command: 'info',
         opts: this.defaultOpts,
@@ -335,30 +321,64 @@ class Client extends EventEmitter {
       }
       publicKey = info.publicKey
       id = info.id
-    } else if (publicKey && !url) {
-      // this could return multiples. just find the first for now.
-      const peer = Object.values(this.peerUrls).find(
-        p => p.publicKey === publicKey
-      )
-      if (peer) {
-        url = peer.url
-        id = peer.id
-        debug(`Found url ${url} from public key ${publicKey}`)
-      }
+    } catch (err) {
+      // TODO try other lookup methods
+      throw err
     }
-    if (!publicKey) throw new Error(`Couldn't find public key for ${url}`)
-    if (!url) throw new Error(`Couldn't find url for ${publicKey}`)
-    if (!transport && url) transport = await this.transportGenerator({ url })
+    // if (url && !id) {
+    //   transport = await this.transportGenerator({ url })
+    //   const info = await remote({
+    //     command: 'info',
+    //     opts: this.defaultOpts,
+    //     transport,
+    //   })
+    //   debug('!! got info response:', info)
+    //   assert(
+    //     verify(info, { all: true }),
+    //     `info message from ${url} was not properly signed`
+    //   )
+    //   assert.equal(
+    //     info.publicKey,
+    //     info.meta.signed[0].publicKey,
+    //     `info message from ${url} was signed with ${
+    //       info.meta.signed[0].publicKey
+    //     }, expected ${info.publicKey}`
+    //   )
+    //   if (publicKey) {
+    //     assert.equal(
+    //       publicKey,
+    //       info.publicKey,
+    //       `Expected public key ${publicKey} from ${url}, but got ${
+    //         info.publicKey
+    //       }`
+    //     )
+    //   }
+    //   publicKey = info.publicKey
+    //   id = info.id
+    // } else if (publicKey && !url) {
+    //   // this could return multiples. just find the first for now.
+    //   const peer = Object.values(this.peerUrls).find(
+    //     p => p.publicKey === publicKey
+    //   )
+    //   if (peer) {
+    //     url = peer.url
+    //     id = peer.id
+    //     debug(`Found url ${url} from public key ${publicKey}`)
+    //   }
+    // }
+    // if (!publicKey) throw new Error(`Couldn't find public key for ${url}`)
+    // // not all transports require a url
+    // // if (!url) throw new Error(`Couldn't find url for ${publicKey}`)
+    // if (!transport && url) transport = await this.transportGenerator({ url })
     return { id, transport }
   }
   async push({ publicKey, url, all }, opts = {}) {
     // get public key from the url, or vice versa (local discovery)
-    let serverInfo
-    try {
-      serverInfo = await this.resolveServerInfo({ publicKey, url })
-    } catch (err) {
-      return console.error('Error resolving peer info', err.message)
-    }
+    const serverInfo = await this.resolveServerInfo({
+      publicKey,
+      url,
+      transport: opts.transport,
+    })
     debug('pushing to server info', serverInfo)
     const serverKey = `${serverInfo.id}:${stringify(
       without(opts, 'transport')

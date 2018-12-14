@@ -63,10 +63,15 @@ class FileConfig extends LayeredConfig {
       .then(fileData => {
         debug('got file data', fileData)
         let data
-        if (layer.ext && layer.ext.match(/\.ya?ml/)) {
-          data = yamlConfig(fileData)
-        } else {
-          data = JSON.parse(fileData)
+        try {
+          if (layer.ext && layer.ext.match(/\.ya?ml/)) {
+            data = yamlConfig(fileData)
+          } else {
+            data = JSON.parse(fileData)
+          }
+        } catch (err) {
+          console.error('error parsing data', err)
+          data = {}
         }
         debug(`loaded layer ${layer.name}`, data)
         this.set(layer.name, data, { force: true, silent: true })
