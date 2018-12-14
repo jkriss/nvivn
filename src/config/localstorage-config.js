@@ -2,9 +2,9 @@ const assert = require('assert')
 const LayeredConfig = require('./layered-config')
 
 class LocalstorageConfig extends LayeredConfig {
-  constructor(opts) {
+  constructor(opts = {}) {
     super(opts)
-    this.prefix = opts.prefix || 'nvivn:config'
+    this.prefix = opts.prefix
     // allow overriding for node or alternative storage
     this.localStorage = opts.localStorage || localStorage
     this.loadAll()
@@ -16,16 +16,16 @@ class LocalstorageConfig extends LayeredConfig {
       this.write(layer)
     })
   }
+  getKey(name) {
+    return this.prefix ? `${this.prefix}:${name}` : name
+  }
   write(layer) {
     const data = this.data(layer.name)
-    this.localStorage.setItem(
-      `${this.prefix}:${layer.name}`,
-      JSON.stringify(data)
-    )
+    this.localStorage.setItem(this.getKey(layer.name), JSON.stringify(data))
   }
   loadAll() {
     this.layers.forEach(layer => {
-      const str = this.localStorage.getItem(`${this.prefix}:${layer.name}`)
+      const str = this.localStorage.getItem(this.getKey(layer.name))
       const data = JSON.parse(str)
       this.set(layer.name, data, { force: true, silent: true })
     })
