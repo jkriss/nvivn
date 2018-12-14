@@ -2,9 +2,13 @@ const merge = require('merge')
 const EventEmitter = require('events')
 
 class Config extends EventEmitter {
-  constructor({ layers } = {}) {
+  constructor({ layers, asyncLoad } = {}) {
     super()
     this.layers = layers || []
+    if (!asyncLoad)
+      setTimeout(() => {
+        this.emit('ready')
+      }, 0)
   }
   _getLayer(layerName) {
     return this.layers.find(layer => layer.name === layerName)

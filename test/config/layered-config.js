@@ -7,6 +7,14 @@ tap.test('add to an empty config', async function(t) {
   t.same(config.data().greeting, 'hello!')
 })
 
+tap.test('get a ready event', function(t) {
+  t.plan(1)
+  const config = new Config()
+  config.on('ready', () => {
+    t.ok(true, 'ready event got called')
+  })
+})
+
 tap.test('initialize a layered config', async function(t) {
   const config = new Config({
     layers: [{ name: 'default', data: { greeting: 'hello!' } }],

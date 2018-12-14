@@ -18,7 +18,7 @@ class FileConfig extends LayeredConfig {
       }
       return Object.assign({}, layer, meta)
     })
-    super(Object.assign(opts, { layers }))
+    super(Object.assign(opts, { layers, asyncLoad: true }))
     this.path = opts.path || process.cwd()
     this.on('change', layerName => {
       // save out the new version
