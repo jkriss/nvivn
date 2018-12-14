@@ -8,6 +8,7 @@ const internalIp = require('internal-ip')
 const path = require('path')
 
 const port = process.env.PORT || 3000
+let customLogic
 if (process.env.CUSTOM_LOGIC) {
   try {
     customLogic = require(process.env.CUSTOM_LOGIC)
@@ -19,8 +20,8 @@ if (process.env.CUSTOM_LOGIC) {
 const createHandler = async () => {
   const { config, client, server } = await setup()
   const ip = await internalIp.v4()
-  config.set({ info: { connect: { url: `http://${ip}:${port}` } } })
-  server.setCustomLogic(customLogic)
+  config.set('httpInfo', { info: { connect: { url: `http://${ip}:${port}` } } })
+  if (customLogic) server.setCustomLogic(customLogic)
   client.startAutoSync()
   const { info } = config.data()
   if (info && info.greeting) console.log(info.greeting)
