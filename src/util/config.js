@@ -7,7 +7,8 @@ const nvivnConfig = require('../config/nvivn-config')
 const loadConfig = async ({ filepath } = {}) => {
   if (!filepath) filepath = path.join(process.cwd(), '.nvivn')
   const defaults = {
-    messageStore: 'file:./messages',
+    // messageStore: 'file:./.nvivn/messages',
+    messageStore: 'leveldb:./.nvivn/messages.db',
   }
   const baseFile = await findFile({
     basename: path.join(filepath, 'config'),

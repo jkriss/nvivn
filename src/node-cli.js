@@ -148,11 +148,13 @@ const run = async () => {
 
       await new Promise(resolve => {
         const buffered = []
+        let printCount = 0
         req.on('data', d => {
           debug('got data', d)
           if (command === 'verify') {
             buffered.push(d)
           } else {
+            debug('printing result', ++printCount)
             console.log(JSON.stringify(d))
           }
         })

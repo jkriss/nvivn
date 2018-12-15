@@ -136,8 +136,10 @@ class Server extends EventEmitter {
         (result[Symbol.asyncIterator] || result[Symbol.iterator])
           ? result
           : [result]
+      let count = 0
       for await (const r of iterableResult) {
         debug('got iterated result', r)
+        debug('count:', ++count)
         emitter.emit('data', r)
       }
       emitter.emit('end')
