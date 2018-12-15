@@ -100,6 +100,7 @@ class Client extends EventEmitter {
     debug('checking info:', settings.info)
     if (!settings.info) settings.info = {}
     config.on('peers:change', () => this.setFromConfig(config.data()))
+    this.setFromConfig(config.data())
     this.transportGenerator = transportGenerator || createHttpClient
     ;[
       'create',
@@ -147,7 +148,8 @@ class Client extends EventEmitter {
     for (const peer of this.peers) {
       if (peer.sync) {
         debug(`will sync with ${JSON.stringify(peer)} ${peer.sync}`)
-        const cronPattern = friendlyCron(peer.sync) || peer.sync
+        const cronPattern =
+          friendlyCron(peer.sync, { random: true }) || peer.sync
         this.crons[peer] = new CronJob(cronPattern, () => {
           if (this.crons[peer] && this.crons[peer].isRunning) {
             return
