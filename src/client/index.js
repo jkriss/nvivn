@@ -87,6 +87,7 @@ class Client extends EventEmitter {
     super()
     this.peers = []
     const settings = config.data()
+    if (!keys) keys = settings.keys
     this.defaultOpts = {
       keys,
       messageStore,
