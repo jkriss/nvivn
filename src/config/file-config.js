@@ -28,6 +28,10 @@ class FileConfig extends LayeredConfig {
       const layer = this._getLayer(layerName)
       assert(layer, `Should have a layer called ${layerName}`)
       if (layer.write === false) return
+      if (layer.skipWrite) {
+        delete layer.skipWrite
+        return
+      }
       if (!layer.file) layer.file = layer.name
       this.write(layer)
         .then(() => this.emit('saved', layerName))
@@ -56,14 +60,18 @@ class FileConfig extends LayeredConfig {
     }
     return fs.ensureFile(fullPath).then(() => fs.writeFile(fullPath, str))
   }
-  load(layer) {
+  load(layer, opts = {}) {
     const fullPath = this.getPath(layer)
     debug('loading', layer, fullPath)
     if (!layer.watcher) {
       layer.watcher = chokidar.watch(fullPath, { persistent: true })
       layer.watcher.on('change', () => {
         debug(`${fullPath} changed, reloading`)
-        this.load(layer)
+        layer.skipWrite = true
+        this.load(layer).then(() => {
+          this.emit('change', layer.name)
+          this.emit(`${layer.name}:change`)
+        })
       })
     }
     return fs

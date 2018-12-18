@@ -101,6 +101,9 @@ class Client extends EventEmitter {
     debug('checking info:', settings.info)
     if (!settings.info) settings.info = {}
     config.on('peers:change', () => this.setFromConfig(config.data()))
+    config.on('change', () => {
+      this.defaultOpts.info = config.data().info
+    })
     this.setFromConfig(config.data())
     this.transportGenerator = transportGenerator || createHttpClient
     ;[
