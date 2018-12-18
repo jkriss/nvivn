@@ -37,6 +37,7 @@
     "get-stdin": "^6.0.0",
     "greenlock-express": "^2.4.10",
     "internal-ip": "^3.0.1",
+    "jayson": "^2.1.0",
     "js-yaml": "^3.12.0",
     "lodash.sortby": "^4.7.0",
     "merge": "^1.2.1",
