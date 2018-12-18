@@ -5,6 +5,7 @@ const path = require('path')
 const yaml = require('js-yaml')
 const assert = require('assert')
 const yamlConfig = require('../util/yaml-config')
+const chokidar = require('chokidar')
 
 class FileConfig extends LayeredConfig {
   constructor(opts) {
@@ -58,6 +59,13 @@ class FileConfig extends LayeredConfig {
   load(layer) {
     const fullPath = this.getPath(layer)
     debug('loading', layer, fullPath)
+    if (!layer.watcher) {
+      layer.watcher = chokidar.watch(fullPath, { persistent: true })
+      layer.watcher.on('change', () => {
+        debug(`${fullPath} changed, reloading`)
+        this.load(layer)
+      })
+    }
     return fs
       .readFile(fullPath, 'utf8')
       .then(fileData => {
@@ -87,6 +95,11 @@ class FileConfig extends LayeredConfig {
     ).then(() => {
       this.emit('ready')
     })
+  }
+  close() {
+    this.layers
+      .filter(layer => layer.watcher)
+      .forEach(layer => layer.watcher.close())
   }
 }
 

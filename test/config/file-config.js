@@ -2,6 +2,7 @@ const tap = require('tap')
 const Config = require('../../src/config/file-config')
 const path = require('path')
 const fs = require('fs-extra')
+const sleep = require('await-sleep')
 
 tap.test('create a new file config', function(t) {
   t.plan(1)
@@ -15,6 +16,7 @@ tap.test('create a new file config', function(t) {
   })
   config.on('ready', () => {
     t.same(config.data().greeting, 'hello!')
+    config.close()
   })
 })
 
@@ -29,6 +31,7 @@ tap.test('allow non-file layers', function(t) {
   })
   config.on('ready', () => {
     t.same(config.data().version, 1)
+    config.close()
   })
 })
 
@@ -56,5 +59,32 @@ tap.test('write new files as needed', function(t) {
   })
   config.on('saved', layerName => {
     t.ok(fs.existsSync(layerFilename), 'the file should exist')
+    config.close()
+  })
+})
+
+tap.test('reload the file if it changes on disk', function(t) {
+  t.plan(2)
+  fs.writeJSON(path.join(__dirname, 'files', 'tmp', 'will-edit.json'), {
+    greeting: 'hi',
+  })
+  const config = new Config({
+    path: path.join(__dirname, 'files', 'tmp'),
+    layers: [{ file: 'will-edit.json', immutable: true }],
+  })
+  config.on('ready', () => {
+    t.same(config.data().greeting, 'hi', `should load data from file`)
+    // write new data to the file
+    fs.writeJSON(path.join(__dirname, 'files', 'tmp', 'will-edit.json'), {
+      greeting: 'hi!!',
+    })
+    sleep(200).then(() => {
+      t.same(
+        config.data().greeting,
+        'hi!!',
+        `should load the new data from file`
+      )
+      config.close()
+    })
   })
 })
