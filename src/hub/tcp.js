@@ -56,6 +56,7 @@ const createClient = async ({ settings, filepath }) => {
         .request(m, args)
         .then(res => {
           debug('got response', res)
+          if (res.error) throw new Error(res.error.message)
           return res.result
         })
         .catch(async err => {

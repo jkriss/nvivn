@@ -30,12 +30,15 @@ class Hub {
     // debug("message store:", messageStore)
     for (const m of Object.keys(mappedCommands)) {
       this[m] = args => {
+        debug('calling', m, 'with', args)
         const settings = this.config.data()
         return mappedCommands[m](args, {
           messageStore,
           keys: settings.keys,
           config: this.config,
           info: settings.info,
+        }).catch(err => {
+          throw { code: 500, message: err.message }
         })
       }
     }
