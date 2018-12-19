@@ -4,6 +4,15 @@ const tcpHub = require('./tcp')
 const cli = require('./cli')
 const addRun = require('./run')
 const oyaml = require('oyaml')
+const createHttpServer = require('./http')
+
+const server = async (hub, opts = {}) => {
+  console.log('starting server with opts', opts)
+  const { listen } = createHttpServer(hub)
+  const port = opts.port || 3000
+  await listen(port)
+  console.log(`Listening at http://localhost:${port}`)
+}
 
 const run = async () => {
   debug('-- starting cli run --')
@@ -17,9 +26,13 @@ const run = async () => {
     input = input.replace(/-$/, oyaml.stringify(JSON.parse(stdin)))
     // TODO merge in other options if provide
   }
+  // catch any special case, non-hub commands
   const hub = await tcpHub()
   debug('-- got hub --')
   addRun(cli(hub))
+  if (input.match(/^server($|\s)/)) {
+    return server(hub, oyaml.parse(input.replace('server', '')))
+  }
   hub
     .cli(input)
     .then(result => {

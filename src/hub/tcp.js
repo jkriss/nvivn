@@ -39,7 +39,8 @@ const createServer = async ({ settings, filepath } = {}) => {
     debug('process exiting, cleaning up')
     server.close(() => {
       debug('server closed')
-      debug('socket still present?', fs.existsSync(SOCKET_PATH))
+      const stillExists = fs.existsSync(SOCKET_PATH)
+      debug('post server close socket still present?', stillExists)
     })
   })
   return server
@@ -65,6 +66,12 @@ const createClient = async ({ settings, filepath }) => {
         })
     }
   }
+
+  onExit(() => {
+    debug('process exiting, cleaning up client')
+    client.close()
+  })
+
   return client
 }
 

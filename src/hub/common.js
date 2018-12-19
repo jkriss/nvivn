@@ -38,6 +38,7 @@ class Hub {
           config: this.config,
           info: settings.info,
         }).catch(err => {
+          console.error('error calling', m, err)
           throw { code: 500, message: err.message }
         })
       }
