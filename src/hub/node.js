@@ -5,7 +5,7 @@ const FileConfig = require('../config/file-config')
 const nvivnConfig = require('../config/nvivn-config')
 const Hub = require('./common')
 
-const loadConfig = async ({ filepath, settings } = {}) => {
+const loadConfig = async ({ filepath, settings, watch } = {}) => {
   if (!filepath) filepath = path.join(process.cwd(), '.nvivn')
   const defaults = {
     // messageStore: 'file:./.nvivn/messages',
@@ -17,6 +17,7 @@ const loadConfig = async ({ filepath, settings } = {}) => {
   })
   debug('using base file:', baseFile)
   const config = new FileConfig({
+    watch,
     path: filepath,
     layers: [
       { name: 'default', data: defaults, write: false },
@@ -34,4 +35,7 @@ const setup = async ({ settings, filepath } = {}) => {
   return new Hub(config)
 }
 
-module.exports = setup
+module.exports = {
+  setup,
+  loadConfig,
+}

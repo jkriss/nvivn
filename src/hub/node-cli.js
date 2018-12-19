@@ -2,6 +2,7 @@ const debug = require('debug')(`nvivn:hub:cli:node:${process.pid}`)
 const getStdin = require('get-stdin')
 const tcpHub = require('./tcp')
 const cli = require('./cli')
+const addRun = require('./run')
 const oyaml = require('oyaml')
 
 const run = async () => {
@@ -18,7 +19,7 @@ const run = async () => {
   }
   const hub = await tcpHub()
   debug('-- got hub --')
-  cli(hub)
+  addRun(cli(hub))
   hub
     .cli(input)
     .then(result => {

@@ -3,7 +3,8 @@
   "version": "0.0.14",
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
-  "main": "src/index.js",
+  "main": "src/hub/node.js",
+  "browser": "src/hub/browser.js",
   "bin": {
     "nvivn": "bin/nvivn.js"
   },

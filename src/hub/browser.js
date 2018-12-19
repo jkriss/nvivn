@@ -30,4 +30,7 @@ const setup = async ({ settings, prefix, localStorage } = {}) => {
   return new Hub(config)
 }
 
-module.exports = setup
+module.exports = {
+  setup,
+  loadConfig,
+}

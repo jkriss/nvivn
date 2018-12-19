@@ -1,2 +1,2 @@
 #!/usr/bin/env node
-require('../src/node-cli')
+require('../src/hub/node-cli')

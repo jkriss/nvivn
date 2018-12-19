@@ -1,6 +1,6 @@
 const debug = require('debug')(`nvivn:hub:tcp:${process.pid}`)
 const jayson = require('jayson/promise')
-const createHub = require('./node')
+const { setup, loadConfig } = require('./node')
 const fs = require('fs-extra')
 const commands = require('../index')
 const lockfile = require('lockfile')
@@ -18,7 +18,7 @@ const createServer = async ({ settings, filepath } = {}) => {
   debug('waiting for lock file', LOCK_PATH)
   await lock(LOCK_PATH, { wait: 10 })
   debug('got lock, creating tcp server')
-  const hub = await createHub({ settings, filepath })
+  const hub = await setup({ settings, filepath })
   const methods = {}
   for (const m of methodNames) {
     methods[m] = args => {
@@ -88,6 +88,8 @@ const tcpHub = async ({ settings, filepath } = {}) => {
     }
   }
   const client = await createClient({ settings, filepath })
+  client.config = await loadConfig({ settings, filepath, watch: false })
+
   client.close = () => {
     debug('closing client')
     if (listener) {

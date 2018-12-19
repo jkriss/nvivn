@@ -36,7 +36,7 @@ const normalizedSignatures = message => {
 }
 
 const verify = (message, opts = {}) => {
-  if (!(message.meta && message.meta.signed)) return [false]
+  if (!(message.meta && message.meta.signed)) return opts.all ? false : [false]
   const results = []
   for (const { payload, signature, publicKey } of normalizedSignatures(
     message

@@ -20,6 +20,7 @@ const addCli = hub => {
     if (!hub[command]) throw new Error(`No command "${command}"`)
     return hub[command](opts)
   }
+  return hub
 }
 
 module.exports = addCli

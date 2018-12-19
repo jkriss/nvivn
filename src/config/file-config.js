@@ -23,6 +23,7 @@ class FileConfig extends LayeredConfig {
     })
     super(Object.assign(opts, { layers, asyncLoad: true }))
     this.path = opts.path || process.cwd()
+    this.watch = opts.watch
     this.on('change', layerName => {
       // save out the new version
       const layer = this._getLayer(layerName)
@@ -63,7 +64,7 @@ class FileConfig extends LayeredConfig {
   load(layer, opts = {}) {
     const fullPath = this.getPath(layer)
     debug('loading', layer, fullPath)
-    if (!layer.watcher) {
+    if (!layer.watcher && this.watch !== false) {
       layer.watcher = chokidar.watch(fullPath, { persistent: true })
       layer.watcher.on('change', () => {
         debug(`${fullPath} changed, reloading`)
