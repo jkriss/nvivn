@@ -24,7 +24,11 @@ const run = async () => {
     .cli(input)
     .then(result => {
       debug('got result', result)
-      console.log(JSON.stringify(result))
+      console.log(
+        Array.isArray(result)
+          ? result.map(JSON.stringify).join('\n')
+          : JSON.stringify(result)
+      )
     })
     .catch(err => {
       console.error('cli error:', err)

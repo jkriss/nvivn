@@ -6,14 +6,16 @@ const addCli = hub => {
     const [command, ...rest] = str.split(/\s+/)
     const args = rest.join(' ').trim()
     debug('calling command', command, 'with args', rest.join(' '))
-    let opts
-    if (!args.includes(':')) {
-      opts = { body: args }
-    } else {
-      try {
-        opts = oyaml.parse(args, { unflatten: false })
-      } catch (err) {
-        opts = JSON.parse(args)
+    let opts = {}
+    if (args.length > 0) {
+      if (!args.includes(':')) {
+        opts = { body: args }
+      } else {
+        try {
+          opts = oyaml.parse(args, { unflatten: false })
+        } catch (err) {
+          opts = JSON.parse(args)
+        }
       }
     }
     debug('normalized arguments', opts)
