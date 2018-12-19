@@ -16,6 +16,7 @@ const addCli = hub => {
         opts = JSON.parse(args)
       }
     }
+    debug('normalized arguments', opts)
     if (!hub[command]) throw new Error(`No command "${command}"`)
     return hub[command](opts)
   }

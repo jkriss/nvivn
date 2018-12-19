@@ -2,10 +2,13 @@ const debug = require('debug')('nvivn:hub')
 const commands = require('../index')
 const getStore = require('../util/store-connection')
 
+// make them all async for easier handling
 const mappedCommands = Object.assign({}, commands, {
   create: async m => commands.create(m),
-  del: ({ hash, hard }, { messageStore, keys }) =>
-    commands.del(hash, { hard, messageStore, keys }),
+  verify: async m => {
+    if (commands.verify(m, { all: true })) return m
+  },
+  sign: async (...args) => commands.sign(...args),
   list: async (q, opts) => {
     const results = commands.list(q, opts)
     if (typeof results === 'undefined') return []
@@ -19,7 +22,7 @@ const mappedCommands = Object.assign({}, commands, {
 
 class Hub {
   constructor(config) {
-    debug('creating hub with config:', config)
+    // debug('creating hub with config:', config)
     this.config = config
     const settings = config.data()
     debug('settings:', settings)

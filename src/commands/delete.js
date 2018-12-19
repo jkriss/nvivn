@@ -1,7 +1,7 @@
 const debug = require('debug')('nvivn:delete')
 const sign = require('./sign')
 
-const del = async (hash, opts = {}) => {
+const del = async ({ hash, hard }, opts = {}) => {
   debug('message store:', opts.messageStore)
   if (opts.messageStore) {
     // get the message
@@ -12,7 +12,7 @@ const del = async (hash, opts = {}) => {
     if (m) {
       // delete the old thing
       await opts.messageStore.del(hash)
-      if (!opts.hard) {
+      if (!hard) {
         let deletedMessage = Object.assign({}, m)
         deletedMessage.body = null
         deletedMessage.deleted = true

@@ -1,8 +1,13 @@
-const debug = require('debug')('nvivn:hub:tcp')
+const debug = require('debug')(`nvivn:hub:tcp:${process.pid}`)
 const jayson = require('jayson/promise')
 const createHub = require('./node')
 const fs = require('fs-extra')
 const commands = require('../index')
+const lockfile = require('lockfile')
+const { promisify } = require('util')
+const lock = promisify(lockfile.lock)
+const unlock = promisify(lockfile.unlock)
+const onExit = require('signal-exit')
 
 const SOCKET_PATH = '.nvivn.sock'
 const LOCK_PATH = '.nvivn.lock'
@@ -10,11 +15,10 @@ const LOCK_PATH = '.nvivn.lock'
 const methodNames = Object.keys(commands)
 
 const createServer = async ({ settings, filepath } = {}) => {
-  const locked = fs.existsSync(LOCK_PATH)
-  if (locked) throw new Error(`${LOCK_PATH} already exists`)
-  fs.writeFileSync(LOCK_PATH, '')
+  debug('waiting for lock file', LOCK_PATH)
+  await lock(LOCK_PATH, { wait: 10 })
+  debug('got lock, creating tcp server')
   const hub = await createHub({ settings, filepath })
-  // console.log("hub:", hub)
   const methods = {}
   for (const m of methodNames) {
     methods[m] = args => {
@@ -24,18 +28,40 @@ const createServer = async ({ settings, filepath } = {}) => {
   }
   const server = jayson.server(methods)
   server.close = () => {
+    debug('closing hub')
     hub.close()
-    fs.removeSync(LOCK_PATH)
+    debug('removing lock file')
+    // fs.removeSync(LOCK_PATH)
+    unlock(LOCK_PATH)
+    debug('socket still present?', fs.existsSync(SOCKET_PATH))
   }
+  onExit(() => {
+    debug('process exiting, cleaning up')
+    server.close(() => {
+      debug('server closed')
+      debug('socket still present?', fs.existsSync(SOCKET_PATH))
+    })
+  })
   return server
 }
 
-const createClient = () => {
+const createClient = async ({ settings, filepath }) => {
+  // might need to wait a bit until this is available
   const client = jayson.client.tcp(SOCKET_PATH)
+  while (!client && tries < 10) await setup()
   for (const m of methodNames) {
-    client[m] = (...args) => {
+    client[m] = (args = {}) => {
       debug('client calling', m, 'with args', args)
-      return client.request(m, args).then(res => res.result)
+      return client
+        .request(m, args)
+        .then(res => {
+          debug('got response', res)
+          return res.result
+        })
+        .catch(async err => {
+          debug('error with client request:', err)
+          throw err
+        })
     }
   }
   return client
@@ -46,24 +72,40 @@ const tcpHub = async ({ settings, filepath } = {}) => {
 
   try {
     server = await createServer({ settings, filepath })
-    listener = server
-      .tcp()
-      .listen(SOCKET_PATH)
-      .on('error', err => {
-        // if (err.code !== 'EADDRINUSE') {
-        console.error('ooops', err)
-        // }
-      })
+    debug('creating tcp server')
+    listener = server.tcp().listen(SOCKET_PATH)
+    server.on('listening', () => {
+      debug('listening at', SOCKET_PATH)
+    })
+    server.on('error', err => {
+      if (err.code !== 'EADDRINUSE') {
+        console.error(`couldn't listen:`, err)
+      }
+    })
   } catch (err) {
-    // console.error("error:", err, err.code)
+    if (err.code !== 'EEXIST') {
+      throw err
+    }
   }
-  const client = createClient()
+  const client = await createClient({ settings, filepath })
   client.close = () => {
-    if (server) server.close()
-    if (listener) listener.close()
+    debug('closing client')
+    if (listener) {
+      debug('closing listener')
+      listener.close()
+      listener.on('close', () => {
+        debug('listener finally closed, closing server')
+        if (server) {
+          debug('closing server')
+          server.close()
+        }
+      })
+    }
   }
   return client
 }
+
+module.exports = tcpHub
 
 if (require.main === module) {
   const test = async () => {

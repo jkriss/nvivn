@@ -4,7 +4,7 @@ const create = require('./create')
 const sign = require('./sign')
 const { encode, decode } = require('../util/encoding')
 
-const announce = (args = {}, opts = {}) => {
+const announce = async (args = {}, opts = {}) => {
   assert(opts.config, 'Must provide a config object as part of opts')
   const settings = opts.config.data()
   assert(settings.info, 'config must have an info object')
