@@ -8,6 +8,12 @@
   },
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
+  "dependencies": {
+    "datemath-parser": "^1.0.6",
+    "flat": "^4.1.0",
+    "mingo": "^2.2.8",
+    "sodium-signatures": "^2.1.1"
+  },
   "devDependencies": {
     "faucet": "0.0.1",
     "husky": "^1.2.1",
