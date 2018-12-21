@@ -1,10 +1,7 @@
 .DS_Store
 node_modules
-.hub
 .env
 dist
-.cache
-messages*
 tmp
-.nvivn*
+.nvivn
 .npmrc

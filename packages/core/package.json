@@ -1,0 +1,34 @@
+{
+  "name": "@nvivn/core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "commands/index.js",
+  "scripts": {
+    "test": "faucet test/**/*.js"
+  },
+  "author": "Jesse Kriss <jesse@jklabs.net>",
+  "license": "MIT",
+  "dependencies": {
+    "datemath-parser": "^1.0.6",
+    "es6-promisify": "^6.0.1",
+    "flat": "^4.1.0",
+    "mingo": "^2.2.8",
+    "monotonic-timestamp": "0.0.9",
+    "sodium-signatures": "^2.1.1",
+    "subleveldown": "^3.0.1"
+  },
+  "devDependencies": {
+    "faucet": "0.0.1",
+    "husky": "^1.2.1",
+    "level": "^4.0.0",
+    "level-browserify": "^2.0.0",
+    "prettier": "^1.15.3",
+    "pretty-quick": "^1.8.0",
+    "tap": "^12.1.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  }
+}

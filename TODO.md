@@ -1,3 +1,0 @@
-- "since" should reference the time this hub saw the message, not message creation time(?)
-- make a cli for the server
-- strip -u and --username options when passing to a remote hub
