@@ -1,6 +1,6 @@
 const tap = require('tap')
 const signatures = require('sodium-signatures')
-const { create, post, del, list } = require('../../src/index')
+const { create, post, del, list } = require('../../src/commands/index')
 const { encode } = require('../../src/util/encoding')
 const MemoryStore = require('../../src/stores/memory')
 
@@ -8,22 +8,28 @@ tap.test('soft delete, with a record', async function(t) {
   const keys = signatures.keyPair()
   const messageStore = new MemoryStore()
   const m = create('hi')
-  // console.log("created message:", m)
-  const posted = await post(m, { messageStore, keys })
+  const posted = await post(m, { messageStore, keys, skipValidation: true })
   // console.log("posted message", posted)
-  t.ok(posted)
-  t.equal(posted.meta.signed.length, 1)
+  t.ok(posted, 'posted a message')
+  t.equal(posted.meta.signed.length, 1, `it's been signed once`)
   const mExists = await messageStore.exists(m.meta.hash)
   t.true(mExists)
-  const deletedMessage = await del(m.meta.hash, { messageStore, keys })
-  t.equal(posted.meta.signed.length, 2)
+  const deletedMessage = await del(
+    { hash: m.meta.hash },
+    { messageStore, keys }
+  )
+  t.equal(posted.meta.signed.length, 2, 'added a signature')
   const deletionSignature = posted.meta.signed.find(s => s.type === 'deletion')
-  t.ok(deletionSignature)
+  t.ok(deletionSignature, 'added a deletion signature')
   const refetchedMessage = await messageStore.get(m.meta.hash)
-  t.ok(refetchedMessage)
-  t.same(refetchedMessage.body, null)
+  t.ok(refetchedMessage, 'the message is still fetchable')
+  t.same(refetchedMessage.body, null, 'the body has been cleared')
   t.same(refetchedMessage.deleted, true, 'deleted flag should now be true')
-  t.equal(refetchedMessage.meta.signed.length, 2)
+  t.equal(
+    refetchedMessage.meta.signed.length,
+    2,
+    'the two signatures are present on the cleared object'
+  )
 })
 
 tap.test('properly sync a soft delete', async function(t) {
@@ -32,12 +38,26 @@ tap.test('properly sync a soft delete', async function(t) {
   const store1 = new MemoryStore({ publicKey: encode(k1.publicKey) })
   const store2 = new MemoryStore({ publicKey: encode(k2.publicKey) })
   const m = create('hi')
-  const posted1 = await post(m, { messageStore: store1, keys: k1 })
-  const posted2 = await post(m, { messageStore: store2, keys: k2 })
-  const deletedMessage = await del(m.meta.hash, {
+  const posted1 = await post(m, {
     messageStore: store1,
     keys: k1,
+    skipValidation: true,
   })
+  t.ok(posted1, 'posted to store 1')
+  const posted2 = await post(m, {
+    messageStore: store2,
+    keys: k2,
+    skipValidation: true,
+  })
+  t.ok(posted2, 'posted to store 2')
+  const deletedMessage = await del(
+    { hash: m.meta.hash },
+    {
+      messageStore: store1,
+      keys: k1,
+    }
+  )
+  t.ok(deletedMessage, 'get the deleted message back')
   const deletionTime = deletedMessage.meta.signed.find(
     s => s.type === 'deletion'
   ).t
@@ -67,13 +87,13 @@ tap.test('hard delete', async function(t) {
   const keys = signatures.keyPair()
   const messageStore = new MemoryStore()
   const m = create('hi')
-  const posted = await post(m, { messageStore, keys })
-  t.ok(posted)
+  const posted = await post(m, { messageStore, keys, skipValidation: true })
+  t.ok(posted, 'posted message')
   const mExists = await messageStore.exists(m.meta.hash)
-  t.ok(mExists)
-  await del(m.meta.hash, { messageStore, keys, hard: true })
+  t.ok(mExists, 'message exists')
+  await del({ hash: m.meta.hash, hard: true }, { messageStore, keys })
   const stillExists = await messageStore.exists(m.meta.hash)
-  t.notOk(stillExists)
+  t.notOk(stillExists, `shouldn't exist after a hard delete`)
   const refetchedMessage = await messageStore.get(m.meta.hash)
-  t.notOk(refetchedMessage)
+  t.notOk(refetchedMessage, 'refetching message should return null')
 })

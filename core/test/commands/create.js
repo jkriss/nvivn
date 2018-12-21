@@ -1,5 +1,5 @@
 const tap = require('tap')
-const { create } = require('../../src/index')
+const { create } = require('../../src/commands/index')
 
 tap.test('create a message from a string', async function(t) {
   const m = create('hi')

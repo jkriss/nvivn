@@ -1,0 +1,23 @@
+{
+  "name": "@nvivn/core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "faucet test/**/*.js"
+  },
+  "author": "Jesse Kriss <jesse@jklabs.net>",
+  "license": "MIT",
+  "devDependencies": {
+    "faucet": "0.0.1",
+    "husky": "^1.2.1",
+    "prettier": "^1.15.3",
+    "pretty-quick": "^1.8.0",
+    "tap": "^12.1.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged"
+    }
+  }
+}

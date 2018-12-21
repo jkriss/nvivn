@@ -1,6 +1,6 @@
 const tap = require('tap')
 const signatures = require('sodium-signatures')
-const { create, sign, verify } = require('../../src/index')
+const { create, sign, verify } = require('../../src/commands/index')
 
 tap.test('sign a message and verify', async function(t) {
   const m = create('hi')

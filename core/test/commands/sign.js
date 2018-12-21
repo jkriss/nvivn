@@ -1,7 +1,7 @@
 const tap = require('tap')
 const signatures = require('sodium-signatures')
 const { decode } = require('../../src/util/encoding')
-const { create, sign } = require('../../src/index')
+const { create, sign } = require('../../src/commands/index')
 
 tap.test('sign a message', async function(t) {
   const m = create('hi')
