@@ -13,5 +13,5 @@ module.exports = {
   normalizedNonMeta,
   sign,
   storeConnection,
-  without
+  without,
 }

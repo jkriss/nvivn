@@ -9,7 +9,10 @@ fs.ensureDirSync(path.dirname(localStoragePath))
 const localStorage = new LocalStorage(localStoragePath)
 
 tap.test(`make a browser/localstorage hub`, async function(t) {
-  const hub = await setup({ localStorage, settings: { messageStore: 'leveljs:.nvivn' } })
+  const hub = await setup({
+    localStorage,
+    settings: { messageStore: 'leveljs:.nvivn' },
+  })
   t.ok(hub)
   const info = await hub.info()
   t.ok(info)
