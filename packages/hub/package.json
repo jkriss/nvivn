@@ -38,5 +38,8 @@
     "tap": "^12.1.1",
     "terser": "^3.13.1",
     "uglifyify": "^5.0.1"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
