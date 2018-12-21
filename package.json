@@ -2,5 +2,8 @@
   "name": "nvivn",
   "version": "1.0.0",
   "author": "Jesse Kriss <jesse@jklabs.net>",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "test": "lerna exec -- npm test"
+  }
 }

@@ -31,9 +31,6 @@ const getStore = (connectionString, opts = {}) => {
     const db = level(pathname)
     const LevelStore = require('../stores/level')
     store = new LevelStore({ db, publicKey })
-  } else if (type === 'nedb') {
-    const NedbStore = require('../stores/nedb')
-    store = new NedbStore({ filename: pathname, autoload: true, publicKey })
   } else {
     throw new Error(`Don't know how to make a store of type ${type}`)
   }
