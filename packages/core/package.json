@@ -26,16 +26,8 @@
   },
   "devDependencies": {
     "faucet": "0.0.1",
-    "husky": "^1.2.1",
     "level": "^4.0.0",
     "level-browserify": "^2.0.0",
-    "prettier": "^1.15.3",
-    "pretty-quick": "^1.8.0",
     "tap": "^12.1.1"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pretty-quick --staged"
-    }
   }
 }
