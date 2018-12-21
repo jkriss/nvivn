@@ -42,19 +42,6 @@ const post = async (message, opts) => {
   const signedMessages = toSign.map(m =>
     sign(m, { keys: opts.keys, signProps: { type: 'route' } })
   )
-  // for (const message of messages) {
-  //   let m = Object.assign({}, message)
-  //   // debug('message store:', opts.messageStore)
-  //   // if it's a deletion, delete the old one first
-  //   const exists = await opts.messageStore.exists(
-  //     (m.meta && m.meta.hash) || hash(m)
-  //   )
-  //   if (!exists) {
-  //     m = sign(m, { keys: opts.keys, signProps: { type: 'route' } })
-  //     // debug('signed message:', m)
-  //   }
-  //   signedMessages.push(m)
-  // }
   debug('done signing')
   // bulk write if it's available
   if (opts.messageStore.writeMany) {
