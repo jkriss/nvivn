@@ -14,7 +14,7 @@
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
   "dependencies": {
-    "@nvivn/core": "1.x",
+    "@nvivn/core": "^1.0.0",
     "assert": "^1.4.1",
     "chokidar": "^2.0.4",
     "events": "^3.0.0",
