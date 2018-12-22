@@ -22,7 +22,7 @@ tap.test(`make a browser/localstorage hub`, async function(t) {
 tap.test(`post a message`, async function(t) {
   const hub = await setup({
     localStorage,
-    settings: { messageStore: 'leveldb:./test/tmp/browser-messages' },
+    settings: { messageStore: 'leveldb:./test/hub/tmp/browser-messages' },
   })
   const m = await hub
     .create({ body: 'hi!' })

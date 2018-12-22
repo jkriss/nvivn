@@ -1,5 +1,6 @@
 const tap = require('tap')
 const { setup } = require('../../hub/node')
+const path = require('path')
 
 tap.test(`make a node hub`, async function(t) {
   const hub = await setup()
@@ -12,7 +13,7 @@ tap.test(`make a node hub`, async function(t) {
 
 tap.test(`post a message`, async function(t) {
   const hub = await setup({
-    settings: { messageStore: 'leveldb:./test/tmp/node-messages' },
+    settings: { messageStore: `leveldb:./test/hub/tmp/node-messages` },
   })
   const m = await hub
     .create({ body: 'hi!' })
