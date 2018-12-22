@@ -1,6 +1,6 @@
 {
   "name": "@nvivn/hub",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "main": "hub/node.js",
   "browser": "hub/browser.js",
@@ -14,8 +14,8 @@
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
   "dependencies": {
-    "@nvivn/ascii-art": "^1.x",
-    "@nvivn/core": "^1.0.1",
+    "@nvivn/ascii-art": "^1.0.2",
+    "@nvivn/core": "^1.0.2",
     "assert": "^1.4.1",
     "chokidar": "^2.0.4",
     "events": "^3.0.0",

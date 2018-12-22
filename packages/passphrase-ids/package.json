@@ -1,6 +1,6 @@
 {
   "name": "@nvivn/passphrase-ids",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "",
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "homepage": "https://github.com/jkriss/nvivn#readme",
@@ -20,7 +20,7 @@
     "url": "https://github.com/jkriss/nvivn/issues"
   },
   "dependencies": {
-    "@nvivn/core": "^1.0.1",
+    "@nvivn/core": "^1.0.2",
     "blake2s-js": "^1.3.0",
     "scryptsy": "^2.0.0",
     "sodium-signatures": "^2.1.1",
