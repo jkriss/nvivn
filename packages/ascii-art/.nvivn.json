@@ -1,0 +1,11 @@
+{
+  "plugins": [
+    {
+      "name": "@nvivn/ascii-art",
+      "opts": {
+        "greeting": "welcome to nvivn",
+        "font": "Larry 3D"
+      }
+    }
+  ]
+}

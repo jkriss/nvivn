@@ -1,0 +1,32 @@
+{
+  "name": "@nvivn/ascii-art",
+  "version": "1.0.0",
+  "description": "> TODO: description",
+  "author": "Jesse Kriss <jesse@jklabs.net>",
+  "homepage": "https://github.com/jkriss/nvivn#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib",
+    "test": "__tests__"
+  },
+  "files": [
+    "lib"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jkriss/nvivn.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1"
+  },
+  "bugs": {
+    "url": "https://github.com/jkriss/nvivn/issues"
+  },
+  "dependencies": {
+    "figlet": "^1.2.1"
+  }
+}

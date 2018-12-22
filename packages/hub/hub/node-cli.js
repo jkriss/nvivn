@@ -1,9 +1,12 @@
-const debug = require('debug')(`nvivn:hub:cli:node:${process.pid}`)
+const debug = require('debug')('nvivn:hub:cli:node')
 const getStdin = require('get-stdin')
 const tcpHub = require('./tcp')
-const cli = require('./cli')
-const addRun = require('./run')
+// const cli = require('./plugins/cli')
+// const addRun = require('./plugins/run')
+const loadPlugins = require('./plugins/load')
 const oyaml = require('oyaml')
+const fs = require('fs-extra')
+const JSON5 = require('json5')
 
 const server = async (hub, opts = {}) => {
   const createHttpServer = require('./http')
@@ -27,9 +30,25 @@ const run = async () => {
     // TODO merge in other options if provide
   }
   // catch any special case, non-hub commands
-  const hub = await tcpHub()
+  // NOTE: these paths are relative to the plugin loader file, currently
+  let additionalPlugins = []
+  try {
+    additionalPlugins = await fs
+      .readFile('./.nvivn.json', 'utf8')
+      .then(str => JSON5.parse(str))
+      .then(config => config.plugins)
+  } catch (err) {
+    if (!err.code || err.code !== 'ENOENT') {
+      console.error('error loading .nvivn.json', err)
+    }
+  }
+  const { settings, wrapFunction } = await loadPlugins({
+    plugins: ['./run', './cli'].concat(additionalPlugins),
+  })
+  const hub = await tcpHub({ settings })
+  await wrapFunction(hub)
   debug('-- got hub --')
-  addRun(cli(hub))
+  // addRun(cli(hub))
   if (input.match(/^server($|\s)/)) {
     return server(hub, oyaml.parse(input.replace('server', '')))
   }

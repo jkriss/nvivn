@@ -14,6 +14,7 @@
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
   "dependencies": {
+    "@nvivn/ascii-art": "^1.x",
     "@nvivn/core": "^1.0.1",
     "assert": "^1.4.1",
     "chokidar": "^2.0.4",
@@ -22,6 +23,7 @@
     "get-stdin": "^6.0.0",
     "jayson": "^2.1.0",
     "js-yaml": "^3.12.0",
+    "json5": "^2.1.0",
     "lockfile": "^1.0.4",
     "merge": "^1.2.1",
     "micro": "^9.3.3",

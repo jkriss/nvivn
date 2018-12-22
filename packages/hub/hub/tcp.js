@@ -1,4 +1,4 @@
-const debug = require('debug')(`nvivn:hub:tcp:${process.pid}`)
+const debug = require('debug')('nvivn:hub:tcp')
 const jayson = require('jayson/promise')
 const { setup, loadConfig } = require('./node')
 const fs = require('fs-extra')
@@ -116,17 +116,3 @@ const tcpHub = async ({ settings, filepath } = {}) => {
 }
 
 module.exports = tcpHub
-
-if (require.main === module) {
-  const test = async () => {
-    const hub1 = await tcpHub()
-    const hub2 = await tcpHub()
-    const info1 = await hub1.info()
-    console.log('\ninfo1:', info1)
-    const info2 = await hub2.info()
-    console.log('\n\ninfo2:', info2, '\n')
-    hub1.close()
-    hub2.close()
-  }
-  test()
-}
