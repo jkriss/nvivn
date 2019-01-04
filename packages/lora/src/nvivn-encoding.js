@@ -15,6 +15,7 @@ const keyToAbbrev = {
   signature: 7,
   id: 8,
   nodeId: 9,
+  about: 'A',
   _hashValid: 'z',
 }
 
@@ -23,6 +24,7 @@ const commonValues = {
     message: 1,
     info: 2,
     command: 3,
+    checkin: 4,
   },
 }
 

@@ -11,6 +11,8 @@ const html = `
     <input style="width:200px" type="text">
     <input type="submit">
   </form>
+  <pre id="status">
+  </pre>
   <pre id="result"></pre>
 `
 
@@ -19,6 +21,7 @@ document.body.innerHTML = html
 const form = document.getElementById('form')
 const input = document.querySelector('#form input[type=text]')
 const resultEl = document.getElementById('result')
+const statusEl = document.getElementById('status')
 const receiveBtn = document.getElementById('receive')
 const cancelBtn = document.getElementById('cancel')
 
@@ -65,7 +68,7 @@ form.onsubmit = evt => {
   // console.log("packets:", parts.map(buf2hex))
 
   const lineBreak = Buffer.from('\n')
-  const delay = 250
+  const delay = 200
 
   // tell it we're going to start sending
   const txCommand = textEncoder.encode(`tx ${parts.length}\n`)
@@ -77,7 +80,8 @@ form.onsubmit = evt => {
     })
     .then(async () => {
       await sleep(delay)
-      for (const part of parts) {
+      for (const idx in parts) {
+        const part = parts[idx]
         // console.log("sending", buf2hex(part))
         const b64 = Buffer.from(part).toString('base64')
         console.log('> sending', b64)
@@ -86,11 +90,15 @@ form.onsubmit = evt => {
           // add the line break
           // console.log("sending", buf2hex(lineBreak))
           // console.log("  line break")
+          statusEl.innerText = `Sending part ${parseInt(idx) + 1} of ${
+            parts.length
+          }`
           return port.send(lineBreak)
         })
         await sleep(delay)
       }
       console.log('back to receiving...')
+      statusEl.innerText = ''
       receiveFor(0)
     })
 
@@ -123,6 +131,7 @@ streamer.onComplete = parts => {
   receiveFor(0)
   resultEl.innerText = JSON.stringify(obj, null, 2)
   console.log('total size:', JSON.stringify(obj).length)
+  statusEl.innerText = ''
   streamer.reset()
 }
 
@@ -152,6 +161,11 @@ document.addEventListener('DOMContentLoaded', event => {
             // this is a command, don't process input
           } else {
             streamer.write(Buffer.from(text, 'base64'))
+            if (streamer.expectedLength) {
+              statusEl.innerText = `Received part ${streamer.parts.length} of ${
+                streamer.expectedLength
+              }`
+            }
           }
         }
         port.onReceiveError = error => {
