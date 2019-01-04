@@ -9,7 +9,7 @@
  * The URL here provides a hint to the browser about what page the user should
  * navigate to to interact with the device.
  */
-WebUSB WebUSBSerial(1 /* https:// */, "192.168.7.25:9966");
+WebUSB WebUSBSerial(1 /* https:// */, "10-4.club");
 
 #define Serial WebUSBSerial
 

@@ -15,7 +15,8 @@
   },
   "scripts": {
     "test": "echo \"Error: run tests from root\" && exit 1",
-    "dev": "budo src/web/index.js:bundle.js --pushstate --ssl"
+    "dev": "budo src/web/index.js:bundle.js --pushstate --ssl",
+    "build": "browserify src/web/index.js | terser -o dist/bundle.js"
   },
   "bugs": {
     "url": "https://github.com/jkriss/nvivn/issues"
@@ -30,6 +31,8 @@
     "map-obj": "^3.0.0"
   },
   "devDependencies": {
-    "budo": "^11.5.0"
+    "browserify": "^16.2.3",
+    "budo": "^11.5.0",
+    "terser": "^3.14.1"
   }
 }

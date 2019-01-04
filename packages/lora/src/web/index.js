@@ -40,10 +40,10 @@ receiveBtn.addEventListener('click', () => receiveFor(0))
 
 cancelBtn.addEventListener('click', cancel)
 
-input.value = JSON.stringify({
-  t: Date.now(),
-  body: 'Hello there!',
-})
+// input.value = JSON.stringify({
+//   t: Date.now(),
+//   body: 'Hello there!',
+// })
 
 let textEncoder = new TextEncoder()
 
