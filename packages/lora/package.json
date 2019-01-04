@@ -1,0 +1,35 @@
+{
+  "name": "@nvivn/lora",
+  "version": "0.0.1",
+  "description": "> TODO: description",
+  "author": "Jesse Kriss <jesse@jklabs.net>",
+  "homepage": "https://github.com/jkriss/nvivn#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jkriss/nvivn.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1",
+    "dev": "budo src/web/index.js:bundle.js --pushstate --ssl"
+  },
+  "bugs": {
+    "url": "https://github.com/jkriss/nvivn/issues"
+  },
+  "dependencies": {
+    "@nvivn/core": "^1.0.2",
+    "await-sleep": "0.0.1",
+    "cbor": "^4.1.4",
+    "clone": "^2.1.2",
+    "lodash.omit": "^4.5.0",
+    "lodash.pick": "^4.4.0",
+    "map-obj": "^3.0.0"
+  },
+  "devDependencies": {
+    "budo": "^11.5.0"
+  }
+}
