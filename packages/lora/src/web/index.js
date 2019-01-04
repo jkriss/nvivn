@@ -5,6 +5,8 @@ const sleep = require('await-sleep')
 
 const html = `
   <input type="button" id="connect" value="Connect">
+  <input type="button" id="receive" value="Receive">
+  <input type="button" id="cancel" value="Cancel">
   <form id="form">
     <input style="width:200px" type="text">
     <input type="submit">
@@ -17,6 +19,24 @@ document.body.innerHTML = html
 const form = document.getElementById('form')
 const input = document.querySelector('#form input[type=text]')
 const resultEl = document.getElementById('result')
+const receiveBtn = document.getElementById('receive')
+const cancelBtn = document.getElementById('cancel')
+
+function receiveFor(seconds) {
+  if (!port) {
+    alert('No device connected')
+  }
+  const rxCommand = textEncoder.encode(`rx ${seconds}\n`)
+  console.log('> sending', Buffer.from(rxCommand).toString())
+  port.send(rxCommand).catch(error => {
+    handleError('Send error: ' + error)
+  })
+}
+
+receiveBtn.addEventListener('click', () => receiveFor(0))
+
+cancelBtn.addEventListener('click', cancel)
+
 input.value = JSON.stringify({
   t: Date.now(),
   body: 'Hello there!',
@@ -24,10 +44,18 @@ input.value = JSON.stringify({
 
 let textEncoder = new TextEncoder()
 
+function cancel() {
+  const cancelCommand = textEncoder.encode(`ca 0\n`)
+  console.log('> sending', Buffer.from(cancelCommand).toString())
+  port.send(cancelCommand).catch(error => {
+    handleError('Send error: ' + error)
+  })
+}
+
 form.onsubmit = evt => {
   evt.preventDefault()
   const rawValue = input.value
-  let value = rawValue
+  let value = { body: rawValue }
   try {
     // value = JSON.parse(rawValue)
     value = eval(`(${rawValue})`)
@@ -37,7 +65,7 @@ form.onsubmit = evt => {
   // console.log("packets:", parts.map(buf2hex))
 
   const lineBreak = Buffer.from('\n')
-  const delay = 1
+  const delay = 250
 
   // tell it we're going to start sending
   const txCommand = textEncoder.encode(`tx ${parts.length}\n`)
@@ -62,6 +90,8 @@ form.onsubmit = evt => {
         })
         await sleep(delay)
       }
+      console.log('back to receiving...')
+      receiveFor(0)
     })
 
   // const decoded = decode(parts)
@@ -89,6 +119,8 @@ const streamer = new Streamer()
 streamer.onComplete = parts => {
   const obj = decode(parts)
   console.log(`!! received multipart data in ${parts.length} parts:`, obj)
+  cancel()
+  receiveFor(0)
   resultEl.innerText = JSON.stringify(obj, null, 2)
   console.log('total size:', JSON.stringify(obj).length)
   streamer.reset()
@@ -99,9 +131,14 @@ document.addEventListener('DOMContentLoaded', event => {
 
   function connect() {
     console.log('Connecting to ' + port.device_.productName + '...')
-    port.connect().then(
+    return port.connect().then(
       () => {
-        console.log(port)
+        console.log('connected to:', port)
+
+        // auto recieve for a bit
+        console.log('starting to receive...')
+        receiveFor(0)
+
         connectButton.textContent = 'Disconnect'
         port.onReceive = data => {
           // this is one part of many, potentially,
@@ -116,27 +153,6 @@ document.addEventListener('DOMContentLoaded', event => {
           } else {
             streamer.write(Buffer.from(text, 'base64'))
           }
-
-          // console.log("data:", data)
-          // if (text === '\n') {
-          //   console.log("<< buffered data:", inputBuffer)
-          //   if (inputBuffer.includes(' ')) {
-          //     // this is a command, don't process input
-          //   } else {
-          //     streamer.write(Buffer.from(inputBuffer, 'base64'))
-          //   }
-          //   inputBuffer = ''
-          // } else {
-          //   inputBuffer += text
-          // }
-          // const val = data.getInt8(0)
-          // // console.log("val:", val)
-          // if (val === 10) {
-          //   console.log("buffered data:", Buffer.from(inputBuffer).toString('base64'))
-          //   inputBuffer = []
-          // } else {
-          //   inputBuffer.push(val)
-          // }
         }
         port.onReceiveError = error => {
           handleError('Receive error: ' + error)
@@ -168,7 +184,7 @@ document.addEventListener('DOMContentLoaded', event => {
 
   serial.getPorts().then(ports => {
     if (ports.length == 0) {
-      error('No devices found.')
+      handleError('No devices found.')
     } else {
       port = ports[0]
       connect()
