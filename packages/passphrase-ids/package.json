@@ -14,7 +14,8 @@
     "url": "git+https://github.com/jkriss/nvivn.git"
   },
   "scripts": {
-    "test": "faucet test/*.js"
+    "test": "faucet test/*.js",
+    "build": "browserify index.js -p tinyify -o dist/passphrase-ids.js"
   },
   "bugs": {
     "url": "https://github.com/jkriss/nvivn/issues"
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "faucet": "0.0.1",
-    "tap": "^12.1.1"
+    "tap": "^12.1.1",
+    "tinyify": "^2.5.0"
   }
 }

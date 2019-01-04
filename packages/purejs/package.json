@@ -1,0 +1,29 @@
+{
+  "name": "@nvivn/purejs",
+  "version": "1.0.2",
+  "description": "",
+  "author": "Jesse Kriss <jesse@jklabs.net>",
+  "homepage": "https://github.com/jkriss/nvivn#readme",
+  "license": "MIT",
+  "main": "index.js",
+  "bin": {
+    "nvivn": "bin/purejs"
+  },
+  "files": [
+    "bin"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jkriss/nvivn.git"
+  },
+  "scripts": {
+    "test": "echo \"Error: run tests from root\" && exit 1",
+    "build": "ncc build index.js -o dist"
+  },
+  "bugs": {
+    "url": "https://github.com/jkriss/nvivn/issues"
+  },
+  "devDependencies": {
+    "@nvivn/hub": "^1.0.2"
+  }
+}
