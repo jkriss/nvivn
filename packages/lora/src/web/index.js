@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', event => {
           // console.log("- got data:", buf2hex(data.buffer))
           let textDecoder = new TextDecoder()
           const text = textDecoder.decode(data)
-          console.log('< recieved:', JSON.stringify(text), buf2hex(data.buffer))
+          console.log('< recieved:', text) //, buf2hex(data.buffer))
 
           if (text.includes(' ')) {
             // this is a command, don't process input

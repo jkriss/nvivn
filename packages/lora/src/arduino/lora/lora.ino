@@ -28,8 +28,22 @@ const int ledPin = 13;
 // Singleton instance of the radio driver
 RH_RF95 rf95(RFM95_CS, RFM95_INT);
 
-uint8_t buf[RH_RF95_MAX_MESSAGE_LEN];
-uint8_t len = sizeof(buf);
+#define BUFSIZE 256
+char inputbuf[BUFSIZE];
+int inputbufPos;
+bool isCommand;
+
+#define COMMANDSIZE 2
+char cmd[COMMANDSIZE+1]; // add room for string termination byte
+String argString = "";
+
+#define TRANSMIT "tx"
+#define RECEIVE "rx"
+#define CANCEL "ca"
+
+int transmitCount;
+int receiveCount;
+bool transmitting;
 
 void setup() {
   while (!Serial) {
@@ -40,26 +54,81 @@ void setup() {
 
 }
 
+void transmit() {
+  int arg = argString.toInt();
+  transmitting = true;
+  Serial.write("transmitting ");
+  Serial.write(arg+'0');
+  Serial.write(" lines\n");
+  Serial.flush();
+  transmitCount = arg;
+}
+
+void transmitPacket(const uint8_t * data, uint8_t len) {
+  Serial.write("sending ");
+  Serial.write(data, len);
+  Serial.write(" via LoRa\n");
+  Serial.flush();
+  transmitCount--;
+  if (transmitCount == 0) {
+    transmitting = false;
+    Serial.write("!! Done transmitting !!\n");
+    Serial.flush();
+  }
+}
+
+void cancel() {
+  transmitCount = 0;
+  transmitting = false;
+  // TODO stop receiving, too
+}
+
 void loop() {
   if (Serial && Serial.available()) {
     int byte = Serial.read();
 
     if (byte == '\n') {
+      if (isCommand) {
+        Serial.write("running command");
+        Serial.write(cmd);
+        Serial.write("\n");
+        if (strcmp(cmd,TRANSMIT) == 0) {
+          transmit();
+        } else if (strcmp(cmd,RECEIVE) == 0) {
+          // TODO
+        } else if (strcmp(cmd,CANCEL) == 0) {
+          cancel();
+        }
+      }
+      int i;
+      if (!isCommand) {
+        if (transmitting) {
+          Serial.write("will transmit ");
+          Serial.write(inputbuf, inputbufPos);
+          Serial.write("\n");
+          Serial.flush();
+          transmitPacket(inputbuf, inputbufPos);
+        }
+      }
       Serial.flush();
+      inputbufPos = 0;
+      isCommand = false;
+      argString = "";
     } else {
-      Serial.write(byte);
-//      Serial.flush();
+      if (byte == ' ') isCommand = true;
+      if (inputbufPos < BUFSIZE) {
+        inputbuf[inputbufPos] = byte;      
+      }
+      // buffer the first chars in case it's a command
+      if (inputbufPos < COMMANDSIZE) {
+        cmd[inputbufPos] = byte;
+      }
+      // if this is after the space and it's
+      // a command, it's an argument, so buffer it
+      if (isCommand && inputbufPos == COMMANDSIZE+1) {
+        argString += (char)byte;
+      }
+      inputbufPos++;      
     }
-
-//    Serial.write(byte);
-//    if (byte == 'H') {
-//      Serial.write("\r\nTurning LED on.");
-//      digitalWrite(ledPin, HIGH);
-//    } else if (byte == 'L') {
-//      Serial.write("\r\nTurning LED off.");
-//      digitalWrite(ledPin, LOW);
-//    }
-//    Serial.write("\r\n> ");
-//    Serial.flush();
   }
 }
