@@ -1,4 +1,4 @@
-const version = 'v1.1'
+const version = '3'
 self.addEventListener('install', function(event) {
   console.log('got install event:', event)
   event.waitUntil(

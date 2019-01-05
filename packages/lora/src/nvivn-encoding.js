@@ -113,6 +113,7 @@ const transform = (message, fn, opts = {}) => {
       }
     }
   }
+  if (m.bytes) fn(m, 'bytes', 'base64')
   return m
 }
 
