@@ -124,7 +124,8 @@ function buf2hex(buffer) {
 let inputBuffer = ''
 const streamer = new Streamer()
 
-streamer.onComplete = parts => {
+streamer.on('done', res => {
+  const parts = res.parts
   const obj = decode(parts)
   console.log(`!! received multipart data in ${parts.length} parts:`, obj)
   cancel()
@@ -133,7 +134,13 @@ streamer.onComplete = parts => {
   console.log('total size:', JSON.stringify(obj).length)
   statusEl.innerText = ''
   streamer.reset()
-}
+})
+
+streamer.on('progress', ({ id, part, total }) => {
+  statusEl.innerText = `Received part ${part} of ${total} (req ${id.toString(
+    'hex'
+  )})`
+})
 
 document.addEventListener('DOMContentLoaded', event => {
   let connectButton = document.querySelector('#connect')
@@ -161,11 +168,6 @@ document.addEventListener('DOMContentLoaded', event => {
             // this is a command, don't process input
           } else {
             streamer.write(Buffer.from(text, 'base64'))
-            if (streamer.expectedLength) {
-              statusEl.innerText = `Received part ${streamer.parts.length} of ${
-                streamer.expectedLength
-              }`
-            }
           }
         }
         port.onReceiveError = error => {

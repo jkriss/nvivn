@@ -2,7 +2,7 @@ const { multipart, multipartDecode } = require('./multipart')
 const { encode, decode } = require('./nvivn-encoding')
 
 const encodeMultipart = (message, opts = {}) => {
-  return multipart(encode(message, opts))
+  return multipart(encode(message, opts), opts)
 }
 
 const decodeMultipart = (parts, opts = {}) => {

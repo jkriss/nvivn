@@ -26,6 +26,7 @@
     "await-sleep": "0.0.1",
     "cbor": "^4.1.4",
     "clone": "^2.1.2",
+    "debug": "^4.1.1",
     "lodash.omit": "^4.5.0",
     "lodash.pick": "^4.4.0",
     "map-obj": "^3.0.0"
