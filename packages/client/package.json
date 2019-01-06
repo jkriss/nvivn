@@ -1,6 +1,6 @@
 {
   "name": "@nvivn/client",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "> TODO: description",
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "homepage": "https://github.com/jkriss/nvivn#readme",
@@ -13,7 +13,7 @@
     "bin"
   ],
   "scripts": {
-    "build": "mkdir -p dist ; browserify cli.js --node -i encoding | terser -o dist/index.js"
+    "build": "mkdir -p dist ; browserify cli.js --node -i encoding -p tinyify | terser -o dist/index.js"
   },
   "publishConfig": {
     "access": "public"
@@ -31,6 +31,7 @@
     "get-stdin": "^6.0.0",
     "node-fetch": "^2.3.0",
     "oyaml": "^0.1.5",
-    "terser": "^3.14.1"
+    "terser": "^3.14.1",
+    "tinyify": "^2.5.0"
   }
 }
