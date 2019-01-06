@@ -1,6 +1,6 @@
 const debug = require('debug')('nvivn:filter')
 const mingo = require('mingo')
-const datemath = require('datemath-parser')
+const datemath = require('./datemath-parser-lite')
 const flatten = require('flat')
 
 const filter = (query, opts = {}) => {

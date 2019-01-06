@@ -1,5 +1,5 @@
 const hash = require('../util/hash')
-const datemath = require('datemath-parser')
+const datemath = require('../util/datemath-parser-lite')
 
 const create = input => {
   let message

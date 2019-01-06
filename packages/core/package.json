@@ -1,6 +1,6 @@
 {
   "name": "@nvivn/core",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "",
   "main": "commands/index.js",
   "scripts": {
@@ -9,7 +9,6 @@
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "license": "MIT",
   "dependencies": {
-    "datemath-parser": "^1.0.6",
     "es6-promisify": "^6.0.1",
     "fast-json-stable-stringify": "^2.0.0",
     "fecha": "^3.0.2",
@@ -23,6 +22,7 @@
     "p-queue": "^3.0.0",
     "sodium-signatures": "^2.1.1",
     "subleveldown": "^3.0.1",
+    "timestring": "^5.0.1",
     "tmp": "0.0.33"
   },
   "devDependencies": {

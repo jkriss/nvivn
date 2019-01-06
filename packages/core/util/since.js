@@ -1,4 +1,4 @@
-const datemath = require('datemath-parser')
+const datemath = require('./datemath-parser-lite')
 
 const sinceExtractor = ({ publicKey, since }) => {
   const t = datemath.parse(since.toString())
@@ -9,7 +9,7 @@ const sinceExtractor = ({ publicKey, since }) => {
     )
     if (!sig) sig = m.meta.signed.find(s => s.publicKey === publicKey)
     if (!sig)
-      throw new Error(`Messaage ${m.meta.hash} not signed by ${publicKey}`)
+      throw new Error(`Message ${m.meta.hash} not signed by ${publicKey}`)
     return sig.t > t
   }
 }
