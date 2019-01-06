@@ -1,12 +1,19 @@
 {
   "name": "@nvivn/client",
-  "version": "0.0.1",
+  "version": "0.0.5",
   "description": "> TODO: description",
   "author": "Jesse Kriss <jesse@jklabs.net>",
   "homepage": "https://github.com/jkriss/nvivn#readme",
   "license": "MIT",
   "bin": {
     "nvivn-client": "bin/nvivn-client.js"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "scripts": {
+    "build": "mkdir -p dist ; browserify cli.js --node -i encoding | terser -o dist/index.js"
   },
   "publishConfig": {
     "access": "public"
@@ -18,10 +25,12 @@
   "bugs": {
     "url": "https://github.com/jkriss/nvivn/issues"
   },
-  "dependencies": {
+  "devDependencies": {
     "@nvivn/core": "^1.0.3",
-    "encoding": "^0.1.12",
-    "node-fetch": "^2.3.0"
-  },
-  "devDependencies": {}
+    "browserify": "^16.2.3",
+    "get-stdin": "^6.0.0",
+    "node-fetch": "^2.3.0",
+    "oyaml": "^0.1.5",
+    "terser": "^3.14.1"
+  }
 }
